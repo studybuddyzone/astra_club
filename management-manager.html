@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexora Management Center</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+<div id="login" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8">
+    <div class="text-center mb-7">
+      <div class="mx-auto mb-4 bg-indigo-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"><i class="fa-solid fa-shield-halved"></i></div>
+      <h1 class="text-2xl font-bold">Nexora Management Center</h1>
+      <p class="text-sm text-slate-500 mt-1">President & Vice President access only</p>
+    </div>
+    <form onsubmit="login(event)" class="space-y-4">
+      <input id="name" required placeholder="Name" class="w-full px-4 py-3 border rounded-xl">
+      <input id="password" type="password" required placeholder="Password" class="w-full px-4 py-3 border rounded-xl">
+      <p id="err" class="hidden text-sm text-rose-600 bg-rose-50 rounded-xl p-3"></p>
+      <button class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold">Enter Management</button>
+    </form>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+<header class="bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-20">
+  <div><h1 class="font-bold text-xl">Nexora Management Center</h1><p id="role" class="text-xs text-slate-500"></p></div>
+  <div class="flex gap-2">
+    <a href="nexora_updated.html" class="px-4 py-2 bg-slate-100 rounded-xl text-sm font-semibold">Main Page</a>
+    <button onclick="logout()" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-semibold">Logout</button>
+  </div>
+</header>
+<main class="max-w-7xl mx-auto p-6">
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <button onclick="openForm('events')" class="bg-white border rounded-2xl p-4 font-semibold"><i class="fa-solid fa-calendar mr-2"></i>Events</button>
+    <button onclick="openForm('announcements')" class="bg-white border rounded-2xl p-4 font-semibold"><i class="fa-solid fa-bullhorn mr-2"></i>Announcements</button>
+    <button onclick="openForm('finances')" class="bg-white border rounded-2xl p-4 font-semibold"><i class="fa-solid fa-wallet mr-2"></i>Budget</button>
+    <button onclick="openTaskForm()" class="bg-white border rounded-2xl p-4 font-semibold"><i class="fa-solid fa-list-check mr-2"></i>Tasks</button>
+  </div>
+  <section class="bg-white border rounded-2xl p-6">
+    <div class="flex justify-between items-center mb-4"><div><h2 class="text-xl font-bold">Members</h2><p class="text-sm text-slate-500">Manage member login accounts and leadership roles.</p></div><button onclick="memberForm()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl font-semibold">Add Member</button></div>
+    <div id="members" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  </section>
+  <section class="bg-white border rounded-2xl p-6 mt-6">
+    <h2 class="text-xl font-bold mb-4">All Data</h2>
+    <div id="data"></div>
+  </section>
+</main>
+</div>
+
+<div id="modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-4">
+ <div class="bg-white rounded-2xl w-full max-w-lg p-6"><div class="flex justify-between mb-5"><h2 id="mtitle" class="font-bold text-lg"></h2><button onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button></div><div id="mbody"></div></div>
+</div>
+
+<script>
+const keys={events:'nexora_events',announcements:'nexora_announcements',finances:'nexora_finances',tasks:'nexora_tasks',members:'nexora_members'};
+const defaultMembers=[
+  {
+    id:'president-1',
+    name:'Govind',
+    password:'7028Govind',
+    role:'president'
+  },
+  {
+    id:'member-anurag',
+    name:'Anurag',
+    password:'Anurag7028@2026',
+    role:'member'
+  }
+];
+function get(k){try{return JSON.parse(localStorage.getItem(keys[k])||'[]')}catch(e){return[]}}
+function set(k,v){localStorage.setItem(keys[k],JSON.stringify(v))}
+function users(){
+  let v=get('members');
+
+  if(!v.length){
+    set('members',defaultMembers);
+    return defaultMembers;
+  }
+
+  // Automatically add President if missing
+  if(!v.some(x=>String(x.role).toLowerCase()==='president')){
+    v.unshift(defaultMembers[0]);
+    set('members',v);
+  }
+
+  return v;
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function login(e){
+ e.preventDefault(); const n=document.getElementById('name').value.trim(),p=document.getElementById('password').value;
+ const u=users().find(x=>x.name.toLowerCase()===n.toLowerCase()&&x.password===p);
+ if(!u||!['president','vice president','vice_president'].includes(String(u.role).toLowerCase())){
+   document.getElementById('err').textContent='Only the President or Vice President can access management.';document.getElementById('err').classList.remove('hidden');return;
+ }
+ sessionStorage.setItem('nexora_management_user',JSON.stringify(u));show();
+}
+function show(){let u;try{u=JSON.parse(sessionStorage.getItem('nexora_management_user')||'null')}catch(e){}
+ if(!u||!['president','vice president','vice_president'].includes(String(u.role).toLowerCase()))return;
+ document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('role').textContent=`Logged in: ${u.name} — ${u.role}`;render()}
+function logout(){sessionStorage.removeItem('nexora_management_user');location.reload()}
+function render(){
+ document.getElementById('members').innerHTML=users().map(u=>`<div class="border rounded-xl p-4"><div class="flex justify-between"><div><b>${esc(u.name)}</b><div class="text-xs text-slate-500 mt-1">${esc(u.role||'member')}</div></div><div><button onclick="memberForm('${u.id}')" class="text-indigo-600 mr-3"><i class="fa-solid fa-pen"></i></button><button onclick="delMember('${u.id}')" class="text-rose-600"><i class="fa-solid fa-trash"></i></button></div></div></div>`).join('');
+ const sections=['events','announcements','finances','tasks'];
+ document.getElementById('data').innerHTML=sections.map(k=>`<div class="mb-6"><h3 class="font-bold capitalize mb-2">${k}</h3><div class="overflow-x-auto"><table class="w-full text-sm"><tbody>${get(k).map(x=>`<tr class="border-b"><td class="py-2">${esc(x.title||x.description||x.category||'Record')}</td><td class="py-2">${esc(x.assignee||x.date||x.amount||'')}</td><td class="py-2 text-right"><button onclick="edit('${k}','${x.id}')" class="text-indigo-600 mr-3">Edit</button><button onclick="del('${k}','${x.id}')" class="text-rose-600">Delete</button></td></tr>`).join('')||'<tr><td class="py-2 text-slate-400">No records</td></tr>'}</tbody></table></div></div>`).join('')
+}
+function memberForm(id){
+ const u=users().find(x=>x.id===id)||{};
+ document.getElementById('mtitle').textContent=id?'Edit Member':'Add Member';
+ document.getElementById('mbody').innerHTML=`<form onsubmit="saveMember(event,'${id||''}')" class="space-y-4">
+ <input id="mn" required value="${esc(u.name)}" placeholder="Name" class="w-full px-4 py-3 border rounded-xl">
+ <input id="mp" type="password" required value="${esc(u.password)}" placeholder="Password" class="w-full px-4 py-3 border rounded-xl">
+ <select id="mr" class="w-full px-4 py-3 border rounded-xl"><option value="member" ${u.role==='member'?'selected':''}>Member</option><option value="vice president" ${u.role==='vice president'?'selected':''}>Vice President</option><option value="president" ${u.role==='president'?'selected':''}>President</option></select>
+ <button class="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold">Save</button></form>`;
+ document.getElementById('modal').classList.remove('hidden')
+}
+function saveMember(e,id){e.preventDefault();let a=users(),o={id:id||'m_'+Date.now(),name:mn.value.trim(),password:mp.value,role:mr.value},i=a.findIndex(x=>x.id===o.id);if(i>=0)a[i]=o;else a.push(o);set('members',a);closeModal();render()}
+function delMember(id){if(confirm('Delete this member?')){set('members',users().filter(x=>x.id!==id));render()}}
+function openTaskForm(id){
+ const x=get('tasks').find(t=>t.id===id)||{},ms=users().filter(u=>u.role==='member');
+ document.getElementById('mtitle').textContent=id?'Edit Task':'Assign Task';
+ document.getElementById('mbody').innerHTML=`<form onsubmit="saveTask(event,'${id||''}')" class="space-y-4">
+ <input id="tt" required value="${esc(x.title)}" placeholder="Task title" class="w-full px-4 py-3 border rounded-xl">
+ <select id="ta" required class="w-full px-4 py-3 border rounded-xl"><option value="">Assign member</option>${ms.map(u=>`<option ${x.assignee===u.name?'selected':''}>${esc(u.name)}</option>`).join('')}</select>
+ <input id="td" type="date" required value="${esc(x.dueDate)}" class="w-full px-4 py-3 border rounded-xl">
+ <select id="ts" class="w-full px-4 py-3 border rounded-xl"><option value="todo">To Do</option><option value="inprogress">In Progress</option><option value="completed">Completed</option></select>
+ <button class="w-full py-3 bg-emerald-600 text-white rounded-xl font-semibold">Save Task</button></form>`;
+ document.getElementById('modal').classList.remove('hidden')
+}
+function saveTask(e,id){e.preventDefault();let a=get('tasks'),o={id:id||'task_'+Date.now(),title:tt.value,assignee:ta.value,dueDate:td.value,status:ts.value},i=a.findIndex(x=>x.id===o.id);if(i>=0)a[i]=o;else a.push(o);set('tasks',a);closeModal();render()}
+function openForm(k,id){
+ let x=get(k).find(v=>v.id===id)||{}, fields;
+ if(k==='events') fields=`<input id="f1" required placeholder="Event title" value="${esc(x.title)}" class="w-full px-4 py-3 border rounded-xl"><input id="f2" type="date" value="${esc(x.date)}" class="w-full px-4 py-3 border rounded-xl"><input id="f3" placeholder="Time" value="${esc(x.time)}" class="w-full px-4 py-3 border rounded-xl"><input id="f4" placeholder="Location" value="${esc(x.location)}" class="w-full px-4 py-3 border rounded-xl">`;
+ else if(k==='announcements') fields=`<input id="f1" required placeholder="Title" value="${esc(x.title)}" class="w-full px-4 py-3 border rounded-xl"><input id="f2" type="date" value="${esc(x.date)}" class="w-full px-4 py-3 border rounded-xl"><textarea id="f3" placeholder="Announcement" class="w-full px-4 py-3 border rounded-xl">${esc(x.content)}</textarea>`;
+ else fields=`<select id="f1" class="w-full px-4 py-3 border rounded-xl"><option value="income">Income</option><option value="expense">Expense</option></select><input id="f2" required placeholder="Description" value="${esc(x.description)}" class="w-full px-4 py-3 border rounded-xl"><input id="f3" type="number" required placeholder="Amount" value="${esc(x.amount)}" class="w-full px-4 py-3 border rounded-xl"><input id="f4" type="date" value="${esc(x.date)}" class="w-full px-4 py-3 border rounded-xl">`;
+ document.getElementById('mtitle').textContent=(id?'Edit ':'Add ')+k;
+ document.getElementById('mbody').innerHTML=`<form onsubmit="saveGeneric(event,'${k}','${id||''}')" class="space-y-3">${fields}<button class="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold">Save</button></form>`;
+ document.getElementById('modal').classList.remove('hidden')
+}
+function saveGeneric(e,k,id){e.preventDefault();let a=get(k),o={id:id||k.slice(0,-1)+'_'+Date.now()};if(k==='events')Object.assign(o,{title:f1.value,date:f2.value,time:f3.value,location:f4.value});else if(k==='announcements')Object.assign(o,{title:f1.value,date:f2.value,content:f3.value,author:'Nexora Management'});else Object.assign(o,{type:f1.value,description:f2.value,amount:Number(f3.value),date:f4.value});let i=a.findIndex(x=>x.id===o.id);if(i>=0)a[i]=o;else a.push(o);set(k,a);closeModal();render()}
+function edit(k,id){if(k==='tasks')openTaskForm(id);else openForm(k,id)}
+function del(k,id){if(confirm('Delete this record?')){set(k,get(k).filter(x=>x.id!==id));render()}}
+function closeModal(){document.getElementById('modal').classList.add('hidden')}
+show();
+</script>
+</body></html>

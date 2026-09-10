@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexora - Task Assignment Manager</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>body{font-family:Inter,sans-serif}</style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+<header class="bg-white border-b border-slate-200 sticky top-0 z-20 px-6 py-4 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="bg-indigo-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xl"><i class="fa-solid fa-bolt"></i></div>
+    <div><h1 class="font-bold text-lg">Nexora Task Assignment Manager</h1><p class="text-xs text-slate-500">Create members and assign tasks by name</p></div>
+  </div>
+  <a href="nexora_updated.html" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-semibold"><i class="fa-solid fa-arrow-left mr-2"></i>Main Page</a>
+</header>
+
+<main class="max-w-6xl mx-auto p-6 space-y-6">
+  <div id="toast" class="hidden fixed bottom-5 right-5 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl text-sm"></div>
+
+  <section class="bg-white rounded-2xl border border-slate-200 p-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+      <div><h2 class="text-xl font-bold">Member Accounts</h2><p class="text-sm text-slate-500">Create the name/password that members will use on the main website.</p></div>
+      <button onclick="openMemberForm()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold"><i class="fa-solid fa-user-plus mr-2"></i>Add Member</button>
+    </div>
+    <div id="members-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  </section>
+
+  <section class="bg-white rounded-2xl border border-slate-200 p-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+      <div><h2 class="text-xl font-bold">Task Assignments</h2><p class="text-sm text-slate-500">Assign each task to a member by exact name.</p></div>
+      <button onclick="openTaskForm()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold"><i class="fa-solid fa-plus mr-2"></i>Assign Task</button>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead><tr class="border-b text-left text-xs uppercase text-slate-500">
+          <th class="py-3 pr-4">Task</th><th class="py-3 pr-4">Member</th><th class="py-3 pr-4">Due Date</th><th class="py-3 pr-4">Status</th><th class="py-3 text-right">Actions</th>
+        </tr></thead>
+        <tbody id="tasks-table"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<div id="modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+    <div class="px-6 py-4 border-b flex items-center justify-between"><h3 id="modal-title" class="font-bold text-lg"></h3><button onclick="closeModal()" class="text-slate-400 text-xl"><i class="fa-solid fa-xmark"></i></button></div>
+    <div id="modal-body" class="p-6"></div>
+  </div>
+</div>
+
+<script>
+const TASK_KEY='nexora_tasks', MEMBER_KEY='nexora_members';
+const defaultMembers=[{id:'member-anurag',name:'Anurag',password:'Anurag7028@2026',role:'member'}];
+
+function members(){
+  try {
+    const saved=JSON.parse(localStorage.getItem(MEMBER_KEY)||'null');
+    if(Array.isArray(saved)&&saved.length) return saved;
+  } catch(e){}
+  localStorage.setItem(MEMBER_KEY,JSON.stringify(defaultMembers)); return defaultMembers;
+}
+function tasks(){
+  try { return JSON.parse(localStorage.getItem(TASK_KEY)||'[]'); } catch(e){ return []; }
+}
+function saveMembers(v){localStorage.setItem(MEMBER_KEY,JSON.stringify(v));}
+function saveTasks(v){localStorage.setItem(TASK_KEY,JSON.stringify(v));}
+
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.remove('hidden');
+  setTimeout(()=>t.classList.add('hidden'),1800);
+}
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+
+function render(){
+  const ms=members(), ts=tasks();
+  document.getElementById('members-list').innerHTML=ms.map(m=>`
+    <div class="border border-slate-200 rounded-xl p-4">
+      <div class="flex justify-between gap-3">
+        <div><div class="font-bold">${esc(m.name)}</div><div class="text-xs text-slate-500 mt-1">Password: ••••••••</div></div>
+        <button onclick="deleteMember('${m.id}')" class="text-slate-400 hover:text-rose-600"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </div>`).join('') || '<p class="text-sm text-slate-400">No members.</p>';
+
+  document.getElementById('tasks-table').innerHTML=ts.map(t=>`
+    <tr class="border-b last:border-0">
+      <td class="py-3 pr-4 font-semibold">${esc(t.title)}</td>
+      <td class="py-3 pr-4">${esc(t.assignee)}</td>
+      <td class="py-3 pr-4 text-slate-500">${esc(t.dueDate)}</td>
+      <td class="py-3 pr-4"><span class="px-2 py-1 rounded-lg bg-slate-100 text-xs font-semibold">${esc(t.status)}</span></td>
+      <td class="py-3 text-right">
+        <button onclick="editTask('${t.id}')" class="text-indigo-600 mr-3"><i class="fa-solid fa-pen"></i></button>
+        <button onclick="deleteTask('${t.id}')" class="text-rose-600"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="5" class="py-10 text-center text-slate-400">No tasks assigned yet.</td></tr>';
+}
+
+function openMemberForm(editId=null){
+  const existing=members().find(m=>m.id===editId);
+  document.getElementById('modal-title').textContent=existing?'Edit Member':'Add Member';
+  document.getElementById('modal-body').innerHTML=`
+    <form onsubmit="saveMember(event,'${editId||''}')" class="space-y-4">
+      <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Member Name</label><input id="m-name" required value="${esc(existing?.name||'')}" placeholder="e.g. Anurag" class="w-full px-4 py-3 border rounded-xl"></div>
+      <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Password</label><input id="m-pass" type="password" required value="${esc(existing?.password||'')}" placeholder="Member login password" class="w-full px-4 py-3 border rounded-xl"></div>
+      <div class="flex justify-end gap-3"><button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 rounded-xl">Cancel</button><button class="px-5 py-2 bg-indigo-600 text-white rounded-xl font-semibold">Save Member</button></div>
+    </form>`;
+  document.getElementById('modal').classList.remove('hidden');
+}
+function saveMember(e,id){
+  e.preventDefault();
+  const ms=members(), name=document.getElementById('m-name').value.trim(), pass=document.getElementById('m-pass').value;
+  if(ms.some(m=>m.name.toLowerCase()===name.toLowerCase() && m.id!==id)){alert('A member with this name already exists.');return;}
+  if(id){const m=ms.find(x=>x.id===id);m.name=name;m.password=pass;}
+  else ms.push({id:'m_'+Date.now(),name,password:pass,role:'member'});
+  saveMembers(ms);closeModal();render();toast('Member saved');
+}
+function deleteMember(id){
+  const m=members().find(x=>x.id===id); if(!m)return;
+  if(confirm('Delete '+m.name+'?')){saveMembers(members().filter(x=>x.id!==id));render();toast('Member deleted');}
+}
+
+function openTaskForm(editId=null){
+  const existing=tasks().find(t=>t.id===editId), ms=members();
+  document.getElementById('modal-title').textContent=existing?'Edit Task':'Assign Task';
+  document.getElementById('modal-body').innerHTML=`
+    <form onsubmit="saveTask(event,'${editId||''}')" class="space-y-4">
+      <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Task Title</label><input id="t-title" required value="${esc(existing?.title||'')}" class="w-full px-4 py-3 border rounded-xl"></div>
+      <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Assign To</label>
+        <select id="t-member" required class="w-full px-4 py-3 border rounded-xl">
+          <option value="">Select member</option>${ms.map(m=>`<option value="${esc(m.name)}" ${existing?.assignee===m.name?'selected':''}>${esc(m.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Due Date</label><input id="t-date" type="date" required value="${esc(existing?.dueDate||'')}" class="w-full px-4 py-3 border rounded-xl"></div>
+      <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Status</label>
+        <select id="t-status" class="w-full px-4 py-3 border rounded-xl">
+          <option value="todo" ${existing?.status==='todo'?'selected':''}>To Do</option>
+          <option value="inprogress" ${existing?.status==='inprogress'?'selected':''}>In Progress</option>
+          <option value="completed" ${existing?.status==='completed'?'selected':''}>Completed</option>
+        </select>
+      </div>
+      <div><label class="block text-xs font-bold uppercase text-slate-500 mb-1">Description (optional)</label><textarea id="t-desc" rows="3" class="w-full px-4 py-3 border rounded-xl">${esc(existing?.description||'')}</textarea></div>
+      <div class="flex justify-end gap-3"><button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 rounded-xl">Cancel</button><button class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-semibold">Save Task</button></div>
+    </form>`;
+  document.getElementById('modal').classList.remove('hidden');
+}
+function saveTask(e,id){
+  e.preventDefault();
+  const ts=tasks(), data={
+    id:id||'task_'+Date.now(), title:document.getElementById('t-title').value.trim(),
+    assignee:document.getElementById('t-member').value, dueDate:document.getElementById('t-date').value,
+    status:document.getElementById('t-status').value, description:document.getElementById('t-desc').value.trim()
+  };
+  const i=ts.findIndex(t=>t.id===data.id); if(i>=0)ts[i]=data;else ts.push(data);
+  saveTasks(ts);closeModal();render();toast('Task saved');
+}
+function editTask(id){openTaskForm(id)}
+function deleteTask(id){if(confirm('Delete this task?')){saveTasks(tasks().filter(t=>t.id!==id));render();toast('Task deleted');}}
+function closeModal(){document.getElementById('modal').classList.add('hidden')}
+window.addEventListener('storage',e=>{if([TASK_KEY,MEMBER_KEY].includes(e.key))render()});
+render();
+</script>
+</body>
+</html>
