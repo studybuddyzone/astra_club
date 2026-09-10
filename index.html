@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexora - Club Management Suite</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-display { font-family: 'Outfit', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+        /* Splash Intro Overlay Styles */
+        .intro-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #090d16;
+            z-index: 9999;
+            pointer-events: none;
+            animation: fadeOverlay 0.6s ease-in-out 2.8s forwards;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .logo-icon {
+            width: 70px;
+            height: 70px;
+            background: #4f46e5;
+            color: #ffffff;
+            border-radius: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.25rem;
+            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);
+            opacity: 0;
+            transform: scale(0.5);
+            animation: 
+                logoEnter 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.2s forwards,
+                logoSplitLeft 0.8s cubic-bezier(0.77, 0, 0.175, 1) 2s forwards;
+        }
+
+        .brand-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip:text ;
+            -webkit-text-fill-color: transparent;
+            opacity: 0;
+            transform: scale(0.5);
+            animation: 
+                textEnter 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s forwards,
+                textSplitRight 0.8s cubic-bezier(0.77, 0, 0.175, 1) 2s forwards;
+        }
+
+        @keyframes logoEnter {
+            0% { opacity: 0; transform: scale(0.5) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        @keyframes textEnter {
+            0% { opacity: 0; transform: scale(0.5) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        @keyframes logoSplitLeft {
+            0% { transform: translateX(0); opacity: 1; }
+            100% { transform: translateX(-120vw); opacity: 0; }
+        }
+
+        @keyframes textSplitRight {
+            0% { transform: translateX(0); opacity: 1; }
+            100% { transform: translateX(120vw); opacity: 0; }
+        }
+
+        @keyframes fadeOverlay {
+            0% { opacity: 1; visibility: visible; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- ANIMATED INTRO OVERLAY -->
+    <div class="intro-overlay" id="introOverlay">
+        <div class="brand-container">
+            <div class="logo-icon">
+                <i class="fa-solid fa-bolt"></i>
+            </div>
+            <h1 class="brand-name">Nexora</h1>
+        </div>
+    </div>
+
+    <!-- STAFF LOGIN (optional - only needed for officers who want edit access) -->
+    <div id="member-login" class="hidden fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-8">
+            <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="text-center mb-7">
+                <div class="mx-auto mb-4 bg-indigo-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Staff Login</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Only office bearers need to log in, to unlock edit access. Everyone else can browse the site freely.</p>
+            </div>
+            <form onsubmit="memberLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Name</label>
+                    <input id="login-name" type="text" required autocomplete="username" placeholder="e.g. Anurag"
+                        class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Password</label>
+                    <input id="login-password" type="password" required autocomplete="current-password" placeholder="Enter password"
+                        class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <p id="login-error" class="hidden text-sm text-rose-600 bg-rose-50 dark:bg-rose-950/30 rounded-xl px-3 py-2"></p>
+                <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-lg shadow-indigo-500/20 transition">
+                    <i class="fa-solid fa-right-to-bracket mr-2"></i> Login
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Toast Modal Alert -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+    <!-- Confirmation / Custom Modal Backdrop -->
+    <div id="app-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div id="modal-box" class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <h3 id="modal-title" class="text-lg font-bold text-slate-900 dark:text-white">Modal Title</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div id="modal-body" class="p-6 max-h-[75vh] overflow-y-auto">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Header -->
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 px-6 py-3.5 flex items-center justify-between shadow-xs">
+        <!-- Left: Logo & Status -->
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xl shadow-md shadow-indigo-500/20">
+                <i class="fa-solid fa-bolt"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                    Nexora <span id="sync-status" class="text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400"><i class="fa-solid fa-spinner animate-spin"></i> Connecting...</span>
+                </h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Nexora Club Management Suite</p>
+            </div>
+        </div>
+
+        <!-- Center: Welcome Greeting -->
+        <div class="flex items-center justify-center">
+            <span id="logged-member-name" class="font-display text-lg md:text-xl font-extrabold tracking-wide bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent drop-shadow-xs"></span>
+        </div>
+
+        <!-- Right: Login/Logout & Theme Toggle -->
+        <div class="flex items-center gap-3">
+            <button id="staff-login-btn" onclick="openLoginModal()" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-400 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                <span>Staff Login</span>
+            </button>
+            <button id="staff-logout-btn" onclick="memberLogout()" class="hidden px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </button>
+            <button onclick="toggleDarkMode()" class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                <i id="theme-icon" class="fa-solid fa-moon text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-4 flex flex-col justify-between shrink-0">
+            <nav class="space-y-1">
+                <p class="px-3 text-[10px] font-bold tracking-wider text-slate-400 uppercase mb-2">Main Menu</p>
+                <button onclick="switchTab('dashboard')" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition active" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-pie w-5 text-center"></i> Dashboard
+                </button>
+                <button onclick="switchTab('events')" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" data-tab="events">
+                    <i class="fa-solid fa-calendar-days w-5 text-center"></i> Events & Calendar
+                </button>
+                <button onclick="switchTab('finances')" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" data-tab="finances">
+                    <i class="fa-solid fa-wallet w-5 text-center"></i> Dues & Finances
+                </button>
+                <button onclick="switchTab('announcements')" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" data-tab="announcements">
+                    <i class="fa-solid fa-bullhorn w-5 text-center"></i> Announcement
+                </button>
+                <button onclick="switchTab('tasks')" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" data-tab="tasks">
+                    <i class="fa-solid fa-list-check w-5 text-center"></i> Task Assignments
+                </button>
+                <button onclick="switchTab('suggestions')" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" data-tab="suggestions">
+                    <i class="fa-solid fa-lightbulb w-5 text-center"></i> Suggestions
+                </button>
+                <button onclick="switchTab('team')" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" data-tab="team">
+                    <i class="fa-solid fa-users w-5 text-center"></i> Team & Roles
+                </button>
+            </nav>
+
+            <div class="pt-6 mt-6 border-t border-slate-200 dark:border-slate-800">
+                <div class="bg-indigo-50 dark:bg-indigo-950/40 p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-900/50">
+                    <div class="flex items-center gap-2 text-indigo-700 dark:text-indigo-400 font-bold text-xs mb-1">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Cloud Sync Active
+                    </div>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">Data persists live in secure cloud storage across sessions and devices.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-6 md:p-8">
+
+            <!-- TAB 1: DASHBOARD -->
+            <div id="tab-dashboard" class="tab-content active space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Nexora Dashboard</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Welcome back! Here are the latest events and announcement.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="switchTab('suggestions')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-500/20 transition flex items-center gap-2">
+                            <i class="fa-solid fa-lightbulb"></i> My Suggestions
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Budget Overview (visible to everyone) -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-wallet text-emerald-600 dark:text-emerald-400"></i> Club Budget Overview
+                        </h3>
+                        <button onclick="switchTab('finances')" class="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">View Details</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Total Income</p>
+                            <h3 id="dash-total-income" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">₹0.00</h3>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Total Expenses</p>
+                            <h3 id="dash-total-expense" class="text-2xl font-extrabold text-rose-600 dark:text-rose-400">₹0.00</h3>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Net Treasury</p>
+                            <h3 id="dash-net-balance" class="text-2xl font-extrabold text-slate-900 dark:text-white">₹0.00</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Events & Announcements View -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Upcoming Events Card -->
+                    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-calendar-days text-indigo-600 dark:text-indigo-400"></i> Upcoming Events
+                            </h3>
+                            <div class="flex items-center gap-3"><a href="event-manager.html" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline president-only">Manage</a><button onclick="switchTab('events')" class="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">View All</button></div>
+                        </div>
+                        <div id="dashboard-events-list" class="space-y-3">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Announcements Card -->
+                    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-bullhorn text-indigo-600 dark:text-indigo-400"></i> Active Announcement
+                            </h3>
+                            <div class="flex items-center gap-3"><a href="announcement-manager.html" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline president-only">Manage</a><button onclick="switchTab('announcements')" class="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">View</button></div>
+                        </div>
+                        <div id="dashboard-latest-announcement" class="space-y-3">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: EVENTS & CALENDAR -->
+            <div id="tab-events" class="tab-content space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center justify-between gap-4"><h2 class="text-2xl font-bold text-slate-900 dark:text-white">Events & Calendar</h2><a href="event-manager.html" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold president-only"><i class="fa-solid fa-gear mr-2"></i>Manage Events</a></div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Plan Nexora meetings, workshops, socials, and activities.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <a href="event-manager.html" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition flex items-center gap-2 president-only">
+                            <i class="fa-solid fa-pen-to-square"></i> Manage Events
+                        </a>
+                        <button onclick="openAddEventModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-500/20 transition flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-plus"></i> Schedule Event
+                        </button>
+                    </div>
+                </div>
+
+                <div id="events-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- TAB 3: DUES & FINANCES -->
+            <div id="tab-finances" class="tab-content space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center justify-between gap-4"><h2 class="text-2xl font-bold text-slate-900 dark:text-white">Dues & Finances</h2><a href="budget-manager.html" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold president-only"><i class="fa-solid fa-wallet mr-2"></i>Budget Manager</a></div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Monitor Nexora treasury, income, and member dues payments.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="openAddTransactionModal('income')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-500/20 transition flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Add Income
+                        </button>
+                        <button onclick="openAddTransactionModal('expense')" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-rose-500/20 transition flex items-center gap-2">
+                            <i class="fa-solid fa-minus"></i> Add Expense
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Financial Summary Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Total Income</p>
+                        <h3 id="fin-total-income" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">₹0.00</h3>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Total Expenses</p>
+                        <h3 id="fin-total-expense" class="text-2xl font-extrabold text-rose-600 dark:text-rose-400">₹0.00</h3>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Net Treasury</p>
+                        <h3 id="fin-net-balance" class="text-2xl font-extrabold text-slate-900 dark:text-white">₹0.00</h3>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 dark:border-slate-800 font-bold text-slate-800 dark:text-slate-200">
+                        Transaction History
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-slate-800/50 text-slate-400 text-xs uppercase tracking-wider font-bold border-b border-slate-200 dark:border-slate-800">
+                                    <th class="py-3.5 px-6">Description</th>
+                                    <th class="py-3.5 px-6">Category</th>
+                                    <th class="py-3.5 px-6">Date</th>
+                                    <th class="py-3.5 px-6">Type</th>
+                                    <th class="py-3.5 px-6 text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="finances-table-body" class="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: ANNOUNCEMENTS -->
+            <div id="tab-announcements" class="tab-content space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Active Announcement</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Broadcast notice to Nexora members (1 active announcement displayed at a time).</p>
+                    </div>
+                    <button onclick="openAddAnnouncementModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-500/20 transition flex items-center gap-2">
+                        <i class="fa-solid fa-bullhorn"></i> Update Announcement
+                    </button>
+                </div>
+
+                <div id="announcements-list" class="w-full max-w-3xl mx-auto">
+                    <!-- Populated dynamically (Single announcement) -->
+                </div>
+            </div>
+
+            <!-- TAB 5: TASK ASSIGNMENTS -->
+            <div id="tab-tasks" class="tab-content space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">My Task Assignments</h2>
+                        <p id="task-view-description" class="text-sm text-slate-500 dark:text-slate-400">Only tasks assigned to your logged-in name are shown.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Todo Column -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs p-5 flex flex-col">
+                        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+                            <h3 class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-slate-400"></span> To Do
+                            </h3>
+                            <span id="count-todo" class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300">0</span>
+                        </div>
+                        <div id="tasks-todo" class="space-y-3 flex-1 min-h-[200px]"></div>
+                    </div>
+
+                    <!-- In Progress Column -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs p-5 flex flex-col">
+                        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+                            <h3 class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-blue-500"></span> In Progress
+                            </h3>
+                            <span id="count-inprogress" class="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/80 rounded-full text-xs font-semibold text-blue-600 dark:text-blue-400">0</span>
+                        </div>
+                        <div id="tasks-inprogress" class="space-y-3 flex-1 min-h-[200px]"></div>
+                    </div>
+
+                    <!-- Completed Column -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs p-5 flex flex-col">
+                        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+                            <h3 class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-emerald-500"></span> Completed
+                            </h3>
+                            <span id="count-completed" class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/80 rounded-full text-xs font-semibold text-emerald-600 dark:text-emerald-400">0</span>
+                        </div>
+                        <div id="tasks-completed" class="space-y-3 flex-1 min-h-[200px]"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 6: SUGGESTION BOX -->
+            <div id="tab-suggestions" class="tab-content space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Suggestion Box</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Collect, upvote, and discuss ideas to improve Nexora.</p>
+                    </div>
+                    <button onclick="openAddSuggestionModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-500/20 transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Submit Suggestion
+                    </button>
+                </div>
+
+                <div id="suggestions-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- TAB 7: TEAM & ROLES -->
+            <div id="tab-team" class="tab-content space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Team & Roles</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Each office bearer has their own section here. Details will be filled in for every role.</p>
+                </div>
+
+                <div id="team-roles-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    <!-- President -->
+                    <div class="team-role-card bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs" data-role="president">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center"><i class="fa-solid fa-crown"></i></div>
+                            <h3 class="font-bold text-slate-900 dark:text-white">President</h3>
+                        </div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Details coming soon.</p>
+                    </div>
+                    <!-- Vice President -->
+                    <div class="team-role-card bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs" data-role="vice-president">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center"><i class="fa-solid fa-star"></i></div>
+                            <h3 class="font-bold text-slate-900 dark:text-white">Vice President</h3>
+                        </div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Details coming soon.</p>
+                    </div>
+                    <!-- Deputy President -->
+                    <div class="team-role-card bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs" data-role="deputy-president">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center"><i class="fa-solid fa-shield-halved"></i></div>
+                            <h3 class="font-bold text-slate-900 dark:text-white">Deputy President</h3>
+                        </div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Details coming soon.</p>
+                    </div>
+                    <!-- Vice Deputy President -->
+                    <div class="team-role-card bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs" data-role="vice-deputy-president">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center"><i class="fa-solid fa-shield"></i></div>
+                            <h3 class="font-bold text-slate-900 dark:text-white">Vice Deputy President</h3>
+                        </div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Details coming soon.</p>
+                    </div>
+                    <!-- Secretary -->
+                    <div class="team-role-card bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs" data-role="secretary">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center"><i class="fa-solid fa-pen-to-square"></i></div>
+                            <h3 class="font-bold text-slate-900 dark:text-white">Secretary</h3>
+                        </div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Details coming soon.</p>
+                    </div>
+                    <!-- Joint Secretary -->
+                    <div class="team-role-card bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs" data-role="joint-secretary">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center"><i class="fa-solid fa-file-signature"></i></div>
+                            <h3 class="font-bold text-slate-900 dark:text-white">Joint Secretary</h3>
+                        </div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Details coming soon.</p>
+                    </div>
+                    <!-- Accountant -->
+                    <div class="team-role-card bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs" data-role="accountant">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center"><i class="fa-solid fa-calculator"></i></div>
+                            <h3 class="font-bold text-slate-900 dark:text-white">Accountant</h3>
+                        </div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Details coming soon.</p>
+                    </div>
+                    <!-- Event Head -->
+                    <div class="team-role-card bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs" data-role="event-head">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center"><i class="fa-solid fa-star-of-life"></i></div>
+                            <h3 class="font-bold text-slate-900 dark:text-white">Event Head</h3>
+                        </div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Details coming soon.</p>
+                    </div>
+                    <!-- Event Manager -->
+                    <div class="team-role-card bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs" data-role="event-manager">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center"><i class="fa-solid fa-calendar-check"></i></div>
+                            <h3 class="font-bold text-slate-900 dark:text-white">Event Manager</h3>
+                        </div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Details coming soon.</p>
+                    </div>
+                    <!-- Store Manager -->
+                    <div class="team-role-card bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs" data-role="store-manager">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center"><i class="fa-solid fa-boxes-stacked"></i></div>
+                            <h3 class="font-bold text-slate-900 dark:text-white">Store Manager</h3>
+                        </div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Details coming soon.</p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Backend-connected App Script (talks to /api/* which uses Firebase Admin SDK) -->
+    <script>
+        // Application State
+        window.clubData = {
+            events: {},
+            finances: {},
+            announcements: {},
+            tasks: {},
+            suggestions: {}
+        };
+
+        const remoteCollections = ['events', 'finances', 'announcements', 'tasks', 'suggestions'];
+        const localCollections = ['events', 'finances', 'announcements', 'tasks'];
+
+        function syncLocalData() {
+            localCollections.forEach(name => {
+                try {
+                    const saved = JSON.parse(localStorage.getItem(`nexora_${name}`) || 'null');
+                    if (Array.isArray(saved)) {
+                        window.clubData[name] = {};
+                        saved.forEach(item => { window.clubData[name][item.id] = item; });
+                    }
+                } catch (err) { console.warn(`Could not load local ${name}:`, err); }
+            });
+        }
+        function saveLocalData(name) {
+            if (!localCollections.includes(name)) return;
+            try {
+                localStorage.setItem(`nexora_${name}`, JSON.stringify(Object.values(window.clubData[name])));
+            } catch (err) { console.warn(`Could not save local ${name}:`, err); }
+        }
+
+        syncLocalData();
+
+        window.addEventListener('storage', (event) => {
+            if (event.key && localCollections.includes(event.key.replace('nexora_', ''))) {
+                syncLocalData();
+                refreshUI();
+            }
+        });
+        window.addEventListener('focus', () => {
+            fetchAllCollections();
+        });
+        window.addEventListener('pageshow', () => {
+            fetchAllCollections();
+        });
+
+        // --- Talk to the backend (Vercel /api functions using Firebase Admin SDK) ---
+        function setSyncStatus(ok) {
+            const el = document.getElementById('sync-status');
+            if (!el) return;
+            if (ok) {
+                el.className = 'text-xs font-normal px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400';
+                el.innerHTML = '<i class="fa-solid fa-cloud"></i> Synced Live';
+            } else {
+                el.className = 'text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400';
+                el.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Offline Mode';
+            }
+        }
+
+        async function fetchCollection(name) {
+            const resp = await fetch(`/api/data?collection=${encodeURIComponent(name)}`);
+            if (!resp.ok) throw new Error(`Failed to load ${name}`);
+            return resp.json();
+        }
+
+        async function fetchAllCollections() {
+            try {
+                const results = await Promise.all(remoteCollections.map(name => fetchCollection(name)));
+                remoteCollections.forEach((name, i) => {
+                    const cloudData = results[i] || {};
+                    if (localCollections.includes(name)) {
+                        // Keep any not-yet-synced offline items around too
+                        const localSaved = JSON.parse(localStorage.getItem(`nexora_${name}`) || '[]');
+                        localSaved.forEach(item => { if (!cloudData[item.id]) cloudData[item.id] = item; });
+                        window.clubData[name] = cloudData;
+                        saveLocalData(name);
+                    } else {
+                        window.clubData[name] = cloudData;
+                    }
+                });
+                setSyncStatus(true);
+                refreshUI();
+            } catch (err) {
+                console.error('Error syncing with server:', err);
+                setSyncStatus(false);
+            }
+        }
+
+        // Initial load, then poll periodically so everyone sees updates without refreshing
+        fetchAllCollections();
+        setInterval(fetchAllCollections, 10000);
+
+        function loadDemoData() {
+            window.clubData = {
+                events: {
+                    'e3': { id: 'e3', title: 'Visions by Code', date: '2026-09-20', time: '10:00', location: 'To Be Announced', description: 'An epic AI Image Generation Competition where participants compete live to engineer the most stunning visual prompts.' }
+                },
+                finances: {
+                    'f1': { id: 'f1', description: 'Club Registration Dues', category: 'Membership Dues', date: '2026-06-01', type: 'income', amount: 3500 },
+                    'f2': { id: 'f2', description: 'Refreshments for Meetup', category: 'Food & Drinks', date: '2026-06-03', type: 'expense', amount: 850 }
+                },
+                announcements: {
+                    'a2': { id: 'a2', title: 'VISIONS BY CODE', date: '2026-09-10', timestamp: 1725926400000, author: 'Nexora Team', content: 'An epic AI Image Generation Competition! 🎨🤖 We’re bringing together technology and creativity, where participants will compete live to engineer the most stunning visual prompts. We’ll need everyone’s support to make this a massive success — from event coordination and tech setups to promotion! Let’s bring our best energy and pull off a smooth, memorable event.' }
+                },
+                tasks: {
+                    't1': { id: 't1', title: 'Book Auditorium for orientation', assignee: 'Sarah Jenkins', dueDate: '2026-06-12', status: 'completed' },
+                    't2': { id: 't2', title: 'Prepare sponsorship deck', assignee: 'Alex Johnson', dueDate: '2026-06-18', status: 'inprogress' },
+                    't3': { id: 't3', title: 'Design Nexora banner and t-shirts', assignee: 'Marcus Chen', dueDate: '2026-06-25', status: 'todo' }
+                },
+                suggestions: {
+                    's1': { id: 's1', title: 'Monthly Hack Nights', author: 'Priya S.', content: 'Host a relaxed evening code workshop once a month with pizza and open projects.', votes: 8, date: '2026-06-05', status: 'Under Review' },
+                    's2': { id: 's2', title: 'Guest Alumni Talks', author: 'Rohan M.', content: 'Invite former Nexora members now working in tech for career Q&A sessions.', votes: 12, date: '2026-06-07', status: 'Approved' }
+                }
+            };
+            syncLocalData();
+            localCollections.forEach(name => {
+                if (Object.keys(window.clubData[name]).length) saveLocalData(name);
+            });
+            refreshUI();
+        }
+
+        function getAuthToken() {
+            return sessionStorage.getItem('nexora_auth_token') || '';
+        }
+
+        window.saveDocument = async function(collectionName, docId, data) {
+            // Update local view immediately, then confirm with the server.
+            window.clubData[collectionName][docId] = data;
+            if (localCollections.includes(collectionName)) saveLocalData(collectionName);
+            refreshUI();
+
+            try {
+                const resp = await fetch(`/api/data?collection=${encodeURIComponent(collectionName)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    },
+                    body: JSON.stringify({ id: docId, data })
+                });
+                if (!resp.ok) {
+                    const result = await resp.json().catch(() => ({}));
+                    throw new Error(result.error || 'Save failed');
+                }
+                showToast("Saved successfully!", "success");
+            } catch (err) {
+                console.error("Save error:", err);
+                showToast(err.message || "Error saving data to server.", "error");
+            }
+        };
+
+        window.deleteDocument = async function(collectionName, docId) {
+            delete window.clubData[collectionName][docId];
+            if (localCollections.includes(collectionName)) saveLocalData(collectionName);
+            refreshUI();
+
+            try {
+                const resp = await fetch(`/api/data?collection=${encodeURIComponent(collectionName)}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    },
+                    body: JSON.stringify({ id: docId })
+                });
+                if (!resp.ok) {
+                    const result = await resp.json().catch(() => ({}));
+                    throw new Error(result.error || 'Delete failed');
+                }
+                showToast("Deleted successfully", "success");
+            } catch (err) {
+                console.error("Delete error:", err);
+                showToast(err.message || "Error deleting item.", "error");
+            }
+
+        };
+
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-indigo-600', 'dark:text-indigo-400', 'font-bold');
+                el.classList.add('text-slate-600', 'dark:text-slate-400');
+            });
+
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            if (activeTab) activeTab.classList.add('active');
+
+            const activeBtn = document.querySelector(`[data-tab="${tabId}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-indigo-600', 'dark:text-indigo-400', 'font-bold');
+                activeBtn.classList.remove('text-slate-600', 'dark:text-slate-400');
+            }
+        };
+
+        window.toggleDarkMode = function() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = 'fa-solid fa-moon text-lg';
+            } else {
+                html.classList.add('dark');
+                icon.className = 'fa-solid fa-sun text-lg';
+            }
+        };
+
+        window.showToast = function(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white';
+            toast.className = `${bgClass} px-4 py-3 rounded-xl shadow-lg text-sm font-semibold flex items-center justify-between pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        window.openModal = function(title, htmlContent) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-body').innerHTML = htmlContent;
+            document.getElementById('app-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('app-modal').classList.add('hidden');
+        };
+
+        window.refreshUI = function() {
+            renderDashboard();
+            renderEventsGrid();
+            renderFinances();
+            renderAnnouncements();
+            renderTasks();
+            renderSuggestions();
+        };
+
+        // Helper to get only the single latest announcement
+        function getLatestAnnouncement() {
+            const annArr = Object.values(window.clubData.announcements || {});
+            if (annArr.length === 0) return null;
+            
+            // Sort by timestamp or date descending
+            annArr.sort((a, b) => {
+                const timeA = a.timestamp || new Date(a.date).getTime() || 0;
+                const timeB = b.timestamp || new Date(b.date).getTime() || 0;
+                return timeB - timeA;
+            });
+            
+            return annArr[0];
+        }
+
+        function renderDashboard() {
+            const eventsListEl = document.getElementById('dashboard-events-list');
+            const eventsArr = Object.values(window.clubData.events).slice(0, 4);
+            if (eventsArr.length === 0) {
+                eventsListEl.innerHTML = '<p class="text-xs text-slate-400 py-3">No upcoming events scheduled.</p>';
+            } else {
+                eventsListEl.innerHTML = eventsArr.map(e => `
+                    <div class="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-sm text-slate-800 dark:text-slate-200">${e.title}</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400"><i class="fa-solid fa-calendar mr-1"></i> ${e.date} at ${e.time} • ${e.location}</p>
+                        </div>
+                        <span class="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 text-xs font-bold rounded-lg">Event</span>
+                    </div>
+                `).join('');
+            }
+
+            const annEl = document.getElementById('dashboard-latest-announcement');
+            const latest = getLatestAnnouncement();
+            
+            if (!latest) {
+                annEl.innerHTML = '<p class="text-xs text-slate-400 py-3">No active announcement.</p>';
+            } else {
+                annEl.innerHTML = `
+                    <div class="p-4 bg-indigo-50/50 dark:bg-indigo-950/30 rounded-xl border border-indigo-100 dark:border-indigo-900/40">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-bold text-sm text-indigo-900 dark:text-indigo-300">${latest.title}</h4>
+                            <span class="text-[10px] text-slate-400">${latest.date}</span>
+                        </div>
+                        <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">${latest.content}</p>
+                        <p class="text-[11px] text-slate-400 mt-2 font-medium">Posted by ${latest.author}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderEventsGrid() {
+            const grid = document.getElementById('events-grid');
+            const events = Object.values(window.clubData.events);
+
+            if (events.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400">No events scheduled. Create one above!</div>`;
+                return;
+            }
+
+            grid.innerHTML = events.map(e => `
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-3 py-1 bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 text-xs font-bold rounded-xl"><i class="fa-solid fa-calendar mr-1"></i> ${e.date}</span>
+                            <button onclick="deleteDocument('events', '${e.id}')" class="text-slate-400 hover:text-rose-600 transition"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <h3 class="font-bold text-lg text-slate-900 dark:text-white mb-2">${e.title}</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">${e.description}</p>
+                    </div>
+                    <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+                        <span><i class="fa-solid fa-clock mr-1"></i> ${e.time}</span>
+                        <span><i class="fa-solid fa-location-dot mr-1"></i> ${e.location}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.openAddEventModal = function() {
+            openModal('Schedule New Event', `
+                <form onsubmit="handleSaveEvent(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Event Title</label>
+                        <input type="text" id="e-title" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Date</label>
+                            <input type="date" id="e-date" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Time</label>
+                            <input type="time" id="e-time" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Location</label>
+                        <input type="text" id="e-location" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Description</label>
+                        <textarea id="e-desc" rows="3" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white"></textarea>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold">Cancel</button>
+                        <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md">Create Event</button>
+                    </div>
+                </form>
+            `);
+        };
+
+        window.handleSaveEvent = function(e) {
+            e.preventDefault();
+            const id = `event_${Date.now()}`;
+            const data = {
+                id,
+                title: document.getElementById('e-title').value,
+                date: document.getElementById('e-date').value,
+                time: document.getElementById('e-time').value,
+                location: document.getElementById('e-location').value,
+                description: document.getElementById('e-desc').value
+            };
+            saveDocument('events', id, data);
+            closeModal();
+        };
+
+        function renderFinances() {
+            const tbody = document.getElementById('finances-table-body');
+            const finances = Object.values(window.clubData.finances);
+
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            finances.forEach(f => {
+                const amt = parseFloat(f.amount) || 0;
+                if (f.type === 'income') totalIncome += amt;
+                else totalExpense += amt;
+            });
+
+            document.getElementById('fin-total-income').innerText = `₹${totalIncome.toFixed(2)}`;
+            document.getElementById('fin-total-expense').innerText = `₹${totalExpense.toFixed(2)}`;
+            document.getElementById('fin-net-balance').innerText = `₹${(totalIncome - totalExpense).toFixed(2)}`;
+
+            // Mirror the same numbers on the Dashboard so budget is visible to everyone at a glance
+            const dashIncome = document.getElementById('dash-total-income');
+            const dashExpense = document.getElementById('dash-total-expense');
+            const dashBalance = document.getElementById('dash-net-balance');
+            if (dashIncome) dashIncome.innerText = `₹${totalIncome.toFixed(2)}`;
+            if (dashExpense) dashExpense.innerText = `₹${totalExpense.toFixed(2)}`;
+            if (dashBalance) dashBalance.innerText = `₹${(totalIncome - totalExpense).toFixed(2)}`;
+
+            if (finances.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-slate-400">No financial transactions recorded.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = finances.map(f => `
+                <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
+                    <td class="py-3.5 px-6 font-semibold text-slate-800 dark:text-slate-200">${f.description}</td>
+                    <td class="py-3.5 px-6"><span class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-medium">${f.category}</span></td>
+                    <td class="py-3.5 px-6 text-slate-500 dark:text-slate-400 text-xs">${f.date}</td>
+                    <td class="py-3.5 px-6">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold ${f.type === 'income' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'}">
+                            ${f.type.toUpperCase()}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-6 text-right font-bold ${f.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+                        ${f.type === 'income' ? '+' : '-'}₹${parseFloat(f.amount).toFixed(2)}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.openAddTransactionModal = function(type) {
+            const title = type === 'income' ? 'Record Income / Dues' : 'Record Expense';
+            openModal(title, `
+                <form onsubmit="handleSaveTransaction(event, '${type}')" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Description</label>
+                        <input type="text" id="f-desc" required placeholder="${type === 'income' ? 'e.g. Annual Dues' : 'e.g. Venue Rental'}" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Category</label>
+                        <input type="text" id="f-cat" required placeholder="${type === 'income' ? 'Membership / Sponsorship' : 'Supplies / Food'}" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Amount (₹)</label>
+                            <input type="number" step="0.01" id="f-amount" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Date</label>
+                            <input type="date" id="f-date" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold">Cancel</button>
+                        <button type="submit" class="px-5 py-2 ${type === 'income' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'} text-white rounded-xl text-sm font-semibold shadow-md">Save Transaction</button>
+                    </div>
+                </form>
+            `);
+        };
+
+        window.handleSaveTransaction = function(e, type) {
+            e.preventDefault();
+            const id = `fin_${Date.now()}`;
+            const data = {
+                id,
+                description: document.getElementById('f-desc').value,
+                category: document.getElementById('f-cat').value,
+                amount: parseFloat(document.getElementById('f-amount').value),
+                date: document.getElementById('f-date').value,
+                type
+            };
+            saveDocument('finances', id, data);
+            closeModal();
+        };
+
+        function renderAnnouncements() {
+            const list = document.getElementById('announcements-list');
+            const latest = getLatestAnnouncement();
+
+            if (!latest) {
+                list.innerHTML = `<div class="text-center py-12 text-slate-400">No announcement posted yet.</div>`;
+                return;
+            }
+
+            list.innerHTML = `
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute top-0 right-0 left-0 h-1.5 bg-indigo-600"></div>
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="px-3 py-1 bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 text-xs font-bold rounded-full flex items-center gap-1.5">
+                                <i class="fa-solid fa-bullhorn text-xs"></i> Active Announcement
+                            </span>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs text-slate-400"><i class="fa-solid fa-clock mr-1"></i> ${latest.date}</span>
+                                <button onclick="deleteDocument('announcements', '${latest.id}')" class="text-slate-400 hover:text-rose-600 transition"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <h3 class="font-extrabold text-2xl text-slate-900 dark:text-white mb-4 tracking-tight">${latest.title}</h3>
+                        <p class="text-slate-600 dark:text-slate-300 leading-relaxed text-base whitespace-pre-line mb-6">${latest.content}</p>
+                    </div>
+                    <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 font-medium">
+                        <span>Posted by <strong class="text-slate-800 dark:text-slate-200">${latest.author}</strong></span>
+                        <span class="text-slate-400 italic">Latest Notice</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.openAddAnnouncementModal = function() {
+            openModal('Post / Replace Announcement', `
+                <form onsubmit="handleSaveAnnouncement(event)" class="space-y-4">
+                    <p class="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 p-3 rounded-xl border border-amber-200 dark:border-amber-900/50">
+                        <i class="fa-solid fa-circle-info mr-1"></i> Submitting a new announcement will replace the current active announcement.
+                    </p>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Title</label>
+                        <input type="text" id="a-title" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Author / Officer Name</label>
+                        <input type="text" id="a-author" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Content / Message</label>
+                        <textarea id="a-content" rows="4" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white"></textarea>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold">Cancel</button>
+                        <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md">Set Announcement</button>
+                    </div>
+                </form>
+            `);
+        };
+
+        window.handleSaveAnnouncement = function(e) {
+            e.preventDefault();
+            
+            // Clear existing announcements to ensure strictly ONE announcement active at a time
+            Object.keys(window.clubData.announcements || {}).forEach(oldId => {
+                deleteDocument('announcements', oldId);
+            });
+
+            const id = `ann_${Date.now()}`;
+            const today = new Date().toISOString().split('T')[0];
+            const data = {
+                id,
+                title: document.getElementById('a-title').value,
+                author: document.getElementById('a-author').value,
+                content: document.getElementById('a-content').value,
+                date: today,
+                timestamp: Date.now()
+            };
+            saveDocument('announcements', id, data);
+            closeModal();
+        };
+
+        function renderTasks() {
+            const todoEl = document.getElementById('tasks-todo');
+            const inprogEl = document.getElementById('tasks-inprogress');
+            const compEl = document.getElementById('tasks-completed');
+
+            let tasks = Object.values(window.clubData.tasks || {});
+            const currentMember = JSON.parse(sessionStorage.getItem('nexora_logged_member') || 'null');
+
+            if (currentMember && currentMember.name) {
+                tasks = tasks.filter(t => String(t.assignee || '').trim().toLowerCase() === currentMember.name.trim().toLowerCase());
+            }
+
+            const todo = tasks.filter(t => t.status === 'todo');
+            const inprogress = tasks.filter(t => t.status === 'inprogress');
+            const completed = tasks.filter(t => t.status === 'completed');
+
+            document.getElementById('count-todo').innerText = todo.length;
+            document.getElementById('count-inprogress').innerText = inprogress.length;
+            document.getElementById('count-completed').innerText = completed.length;
+
+            todoEl.innerHTML = todo.map(t => taskCardHTML(t)).join('') || '<p class="text-xs text-slate-400 py-4 text-center">No tasks assigned to you</p>';
+            inprogEl.innerHTML = inprogress.map(t => taskCardHTML(t)).join('') || '<p class="text-xs text-slate-400 py-4 text-center">No tasks assigned to you</p>';
+            compEl.innerHTML = completed.map(t => taskCardHTML(t)).join('') || '<p class="text-xs text-slate-400 py-4 text-center">No tasks assigned to you</p>';
+        }
+
+        function taskCardHTML(t) {
+            const currentMember = JSON.parse(sessionStorage.getItem('nexora_logged_member') || 'null');
+            const canManage = currentMember && currentMember.role === 'manager';
+            return `
+                <div class="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2">
+                    <div class="flex items-start justify-between gap-2">
+                        <h4 class="font-bold text-sm text-slate-800 dark:text-slate-200">${t.title}</h4>
+                        ${canManage ? `<button onclick="deleteDocument('tasks', '${t.id}')" class="text-slate-400 hover:text-rose-600 transition"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-slate-500">
+                        <span><i class="fa-solid fa-user mr-1"></i> ${t.assignee}</span>
+                        <span><i class="fa-solid fa-calendar mr-1"></i> ${t.dueDate}</span>
+                    </div>
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700 text-xs">
+                        <select onchange="updateTaskStatus('${t.id}', this.value)" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none dark:text-white">
+                            <option value="todo" ${t.status === 'todo' ? 'selected' : ''}>To Do</option>
+                            <option value="inprogress" ${t.status === 'inprogress' ? 'selected' : ''}>In Progress</option>
+                            <option value="completed" ${t.status === 'completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.updateTaskStatus = function(taskId, newStatus) {
+            const task = window.clubData.tasks[taskId];
+            if (task) {
+                task.status = newStatus;
+                saveDocument('tasks', taskId, task);
+            }
+        };
+
+        window.openAddTaskModal = function() {
+            openModal('Create New Task', `
+                <form onsubmit="handleSaveTask(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Task Title</label>
+                        <input type="text" id="t-title" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Assigned To</label>
+                        <input type="text" id="t-assignee" required placeholder="Member name" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Due Date</label>
+                            <input type="date" id="t-date" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Initial Status</label>
+                            <select id="t-status" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                                <option value="todo">To Do</option>
+                                <option value="inprogress">In Progress</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold">Cancel</button>
+                        <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md">Create Task</button>
+                    </div>
+                </form>
+            `);
+        };
+
+        window.handleSaveTask = function(e) {
+            e.preventDefault();
+            const id = `task_${Date.now()}`;
+            const data = {
+                id,
+                title: document.getElementById('t-title').value,
+                assignee: document.getElementById('t-assignee').value,
+                dueDate: document.getElementById('t-date').value,
+                status: document.getElementById('t-status').value
+            };
+            saveDocument('tasks', id, data);
+            closeModal();
+        };
+
+        function renderSuggestions() {
+            const list = document.getElementById('suggestions-list');
+            const items = Object.values(window.clubData.suggestions);
+
+            if (items.length === 0) {
+                list.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400">No suggestions submitted yet. Be the first!</div>`;
+                return;
+            }
+
+            items.sort((a, b) => (b.votes || 0) - (a.votes || 0));
+
+            list.innerHTML = items.map(s => `
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-2.5 py-1 text-xs font-bold rounded-lg ${
+                                s.status === 'Approved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' :
+                                s.status === 'Under Review' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400' :
+                                'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                            }">${s.status || 'Under Review'}</span>
+                            <button onclick="deleteDocument('suggestions', '${s.id}')" class="text-slate-400 hover:text-rose-600 transition"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>
+                        <h3 class="font-bold text-lg text-slate-900 dark:text-white mb-2">${s.title}</h3>
+                        <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">${s.content}</p>
+                    </div>
+                    <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <span class="text-xs text-slate-400 font-medium">By ${s.author} • ${s.date}</span>
+                        <button onclick="upvoteSuggestion('${s.id}')" class="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-thumbs-up"></i>
+                            <span>${s.votes || 0}</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.openAddSuggestionModal = function() {
+            openModal('Submit Suggestion', `
+                <form onsubmit="handleSaveSuggestion(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Title / Idea</label>
+                        <input type="text" id="s-title" required placeholder="e.g. Weekly Tech Trivia" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Submitted By</label>
+                        <input type="text" id="s-author" required placeholder="Your name" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Description & Details</label>
+                        <textarea id="s-content" rows="4" required placeholder="Describe your idea in detail..." class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white"></textarea>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold">Cancel</button>
+                        <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md">Submit Idea</button>
+                    </div>
+                </form>
+            `);
+        };
+
+        window.handleSaveSuggestion = function(e) {
+            e.preventDefault();
+            const id = `sug_${Date.now()}`;
+            const today = new Date().toISOString().split('T')[0];
+            const data = {
+                id,
+                title: document.getElementById('s-title').value,
+                author: document.getElementById('s-author').value,
+                content: document.getElementById('s-content').value,
+                votes: 1,
+                status: 'Under Review',
+                date: today
+            };
+            saveDocument('suggestions', id, data);
+            closeModal();
+        };
+
+        window.upvoteSuggestion = function(sugId) {
+            const sug = window.clubData.suggestions[sugId];
+            if (sug) {
+                sug.votes = (sug.votes || 0) + 1;
+                saveDocument('suggestions', sugId, sug);
+            }
+        };
+
+        // Remove intro screen element safely from DOM after animation completes
+        setTimeout(() => {
+            const intro = document.getElementById('introOverlay');
+            if (intro) intro.remove();
+        }, 3500);
+
+        // Initial Load
+        window.onload = function() {
+            syncLocalData();
+            setTimeout(() => {
+                syncLocalData();
+                if (Object.keys(window.clubData.events).length === 0) {
+                    loadDemoData();
+                }
+            }, 1000);
+        };
+    
+        // --- STAFF LOGIN (now verified by the backend /api/login, not client-side) ---
+        window.memberLogin = async function(event) {
+            event.preventDefault();
+            const name = document.getElementById('login-name').value.trim();
+            const password = document.getElementById('login-password').value;
+            const error = document.getElementById('login-error');
+            error.classList.add('hidden');
+
+            try {
+                const resp = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, password })
+                });
+                const result = await resp.json();
+
+                if (!resp.ok) {
+                    error.textContent = result.error || 'Invalid name or password.';
+                    error.classList.remove('hidden');
+                    return;
+                }
+
+                sessionStorage.setItem('nexora_auth_token', result.token);
+                sessionStorage.setItem('nexora_logged_member', JSON.stringify(result.member));
+                closeLoginModal();
+                showMemberApp();
+            } catch (err) {
+                console.error('Login request failed:', err);
+                error.textContent = 'Could not reach the server. Please try again.';
+                error.classList.remove('hidden');
+            }
+        };
+
+        window.memberLogout = function() {
+            sessionStorage.removeItem('nexora_logged_member');
+            sessionStorage.removeItem('nexora_auth_token');
+            location.reload();
+        };
+
+        window.openLoginModal = function() {
+            const login = document.getElementById('member-login');
+            if (login) login.classList.remove('hidden');
+        };
+
+        window.closeLoginModal = function() {
+            const login = document.getElementById('member-login');
+            if (login) login.classList.add('hidden');
+        };
+
+        function showMemberApp() {
+            const member = JSON.parse(sessionStorage.getItem('nexora_logged_member') || 'null');
+            const nameEl = document.getElementById('logged-member-name');
+            if (nameEl && member) nameEl.textContent = `Hii ${member.name}`;
+
+            const loginBtn = document.getElementById('staff-login-btn');
+            const logoutBtn = document.getElementById('staff-logout-btn');
+            if (member) {
+                if (loginBtn) loginBtn.classList.add('hidden');
+                if (logoutBtn) logoutBtn.classList.remove('hidden');
+            } else {
+                if (loginBtn) loginBtn.classList.remove('hidden');
+                if (logoutBtn) logoutBtn.classList.add('hidden');
+            }
+
+            const desc = document.getElementById('task-view-description');
+            if (desc && member) desc.textContent = `Showing tasks assigned to ${member.name}.`;
+
+            if (typeof refreshUI === 'function') refreshUI();
+        }
+
+        // The site is open for everyone to browse. Logging in is only needed
+        // by office bearers who want to add/edit content (events, budget, etc).
+        function requireMemberLogin() {
+            showMemberApp();
+        }
+
+        document.addEventListener('DOMContentLoaded', requireMemberLogin);
+</script>
+
+<script>
+(function(){
+  function currentUser(){
+    try { return JSON.parse(sessionStorage.getItem('nexora_logged_member') || 'null'); }
+    catch(e){ return null; }
+  }
+  window.nexoraCanEdit = function(){
+    const u = currentUser();
+    return !!(u && (String(u.role).toLowerCase()==='president' || String(u.role).toLowerCase()==='vice president' || String(u.role).toLowerCase()==='vice_president'));
+  };
+  function applyRoleAccess(){
+    const u = currentUser();
+    const canEdit = window.nexoraCanEdit();
+    document.documentElement.dataset.nexoraRole = u ? (u.role || 'member') : 'guest';
+
+    document.querySelectorAll('a[href$="-manager.html"], a[href*="manager.html"]').forEach(el=>{
+      if(!canEdit) el.style.display='none';
+    });
+
+    if(!canEdit){
+      document.querySelectorAll('[onclick*="openAdd"], [onclick*="editDocument"], [onclick*="deleteDocument"], [onclick*="deleteTask"], [onclick*="openAddTaskModal"], [onclick*="openAddEventModal"], [onclick*="openAddAnnouncementModal"], [onclick*="openAddFinanceModal"]').forEach(el=>{
+        el.style.display='none';
+      });
+      document.querySelectorAll('.president-only, .manager-only').forEach(el=>el.style.display='none');
+    }
+  }
+  window.addEventListener('DOMContentLoaded', applyRoleAccess);
+  window.addEventListener('storage', applyRoleAccess);
+})();
+</script>
+
+</body>
+</html>
