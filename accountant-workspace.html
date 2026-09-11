@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accountant Workspace — Nexora Finance Center</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { darkMode: 'class', theme: { extend: { colors: { brand: { 50:'#eef2ff',100:'#e0e7ff',500:'#6366f1',600:'#4f46e5',700:'#4338ca' } } } } }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="roles-data.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="nexora-auth.js"></script>
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .font-display { font-family: 'Outfit', sans-serif; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+  .dark ::-webkit-scrollbar-thumb { background: #475569; }
+</style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
+
+<!-- RESTRICTED ACCESS SCREEN -->
+<div id="restricted-screen" class="hidden flex-1 flex items-center justify-center p-6">
+  <div class="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl p-8 text-center">
+    <div class="w-14 h-14 mx-auto rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center text-2xl mb-4"><i class="fa-solid fa-lock"></i></div>
+    <h1 class="text-xl font-bold text-slate-900 dark:text-white mb-1">Access Restricted</h1>
+    <p id="restricted-message" class="text-sm text-slate-500 dark:text-slate-400 mb-6">This workspace is only available to the Accountant and club leadership.</p>
+    <div class="flex flex-col gap-2">
+      <button id="restricted-login-btn" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold">Staff Login</button>
+      <a href="index.html" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold">Back to Nexora</a>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN MODAL (reused pattern from main site) -->
+<div id="member-login" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-sm p-7">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white">Staff Login</h3>
+      <button onclick="closeLoginModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl"></i></button>
+    </div>
+    <form onsubmit="memberLogin(event)" class="space-y-4">
+      <input id="login-name" type="email" required placeholder="Email" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 dark:text-white">
+      <input id="login-password" type="password" required placeholder="Password" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 dark:text-white">
+      <p id="login-error" class="hidden text-xs text-rose-600 bg-rose-50 dark:bg-rose-950/40 rounded-xl p-2.5"></p>
+      <button class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold">Enter Workspace</button>
+    </form>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app-shell" class="hidden flex-1 flex flex-col">
+  <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 px-4 md:px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <a href="index.html" class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center"><i class="fa-solid fa-calculator"></i></a>
+      <div>
+        <h1 class="font-display font-bold text-slate-900 dark:text-white leading-tight">Finance Center</h1>
+        <p class="text-[11px] text-slate-400">Accountant Workspace</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="workspace-member-name" class="hidden sm:inline text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1"></span>
+      <a href="index.html" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition"><i class="fa-solid fa-arrow-left mr-1"></i>Main Site</a>
+      <button onclick="toggleDarkMode()" class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"><i id="theme-icon" class="fa-solid fa-moon text-lg"></i></button>
+    </div>
+  </header>
+
+  <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+    <aside class="w-full md:w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-4 flex flex-col shrink-0">
+      <nav class="space-y-1">
+        <p class="px-3 text-[10px] font-bold tracking-wider text-slate-400 uppercase mb-2">Finance Center</p>
+        <button onclick="switchWTab('overview')" class="w-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition active" data-wtab="overview"><i class="fa-solid fa-chart-pie w-5 text-center"></i> Dashboard</button>
+        <button onclick="switchWTab('transactions')" class="w-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" data-wtab="transactions"><i class="fa-solid fa-receipt w-5 text-center"></i> Transactions</button>
+        <button onclick="switchWTab('budgets')" class="w-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" data-wtab="budgets"><i class="fa-solid fa-wallet w-5 text-center"></i> Budgets</button>
+        <button onclick="switchWTab('reports')" class="w-tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" data-wtab="reports"><i class="fa-solid fa-file-lines w-5 text-center"></i> Reports</button>
+      </nav>
+      <div class="pt-6 mt-6 border-t border-slate-200 dark:border-slate-800 space-y-2">
+        <button onclick="openTxnModal('income')" class="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition"><i class="fa-solid fa-plus"></i> Add Income</button>
+        <button onclick="openTxnModal('expense')" class="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 transition"><i class="fa-solid fa-minus"></i> Add Expense</button>
+      </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-5 md:p-7 space-y-6">
+
+      <!-- OVERVIEW -->
+      <div id="wtab-overview" class="wtab-content active space-y-6">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Finance Overview</h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Live figures pulled from the finances collection — nothing here is hard-coded.</p>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total Income</p>
+            <h3 id="fc-total-income" class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">₹0.00</h3>
+          </div>
+          <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total Expense</p>
+            <h3 id="fc-total-expense" class="text-xl font-extrabold text-rose-600 dark:text-rose-400">₹0.00</h3>
+          </div>
+          <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Current Balance</p>
+            <h3 id="fc-balance" class="text-xl font-extrabold text-slate-900 dark:text-white">₹0.00</h3>
+          </div>
+          <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Pending Approval</p>
+            <h3 id="fc-pending" class="text-xl font-extrabold text-amber-600 dark:text-amber-400">0</h3>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs p-5">
+          <h3 class="font-bold text-slate-800 dark:text-slate-200 mb-4">Income vs Expense</h3>
+          <div id="fc-bar-chart" class="space-y-3"><!-- simple bar viz injected here --></div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+          <div class="p-4 border-b border-slate-200 dark:border-slate-800 font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+            <span>Recent Transactions</span>
+            <button onclick="switchWTab('transactions')" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">View all</button>
+          </div>
+          <div id="fc-recent-list" class="divide-y divide-slate-100 dark:divide-slate-800"></div>
+        </div>
+      </div>
+
+      <!-- TRANSACTIONS -->
+      <div id="wtab-transactions" class="wtab-content space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Transactions</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Search, filter, and manage every recorded transaction.</p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <input id="txn-search" oninput="renderTransactions()" placeholder="Search description, party, event..." class="flex-1 min-w-[180px] px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 dark:text-white">
+          <select id="txn-type-filter" onchange="renderTransactions()" class="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white">
+            <option value="">All types</option><option value="income">Income</option><option value="expense">Expense</option>
+          </select>
+          <select id="txn-status-filter" onchange="renderTransactions()" class="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white">
+            <option value="">All statuses</option><option value="verified">Verified</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option>
+          </select>
+          <select id="txn-sort" onchange="renderTransactions()" class="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white">
+            <option value="newest">Newest first</option><option value="oldest">Oldest first</option>
+          </select>
+        </div>
+
+        <!-- Desktop table -->
+        <div class="hidden md:block bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-800/50 text-slate-400 text-xs uppercase tracking-wider font-bold border-b border-slate-200 dark:border-slate-800">
+                <th class="py-3 px-5">Description</th><th class="py-3 px-5">Category</th><th class="py-3 px-5">Party</th><th class="py-3 px-5">Date</th><th class="py-3 px-5">Status</th><th class="py-3 px-5 text-right">Amount</th><th class="py-3 px-5"></th>
+              </tr>
+            </thead>
+            <tbody id="txn-table-body" class="divide-y divide-slate-100 dark:divide-slate-800 text-sm"></tbody>
+          </table>
+        </div>
+
+        <!-- Mobile cards -->
+        <div id="txn-card-list" class="md:hidden space-y-3"></div>
+      </div>
+
+      <!-- BUDGETS -->
+      <div id="wtab-budgets" class="wtab-content space-y-5">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Budgets</h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Approved budget utilization per event/project.</p>
+        </div>
+        <div id="budgets-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+
+      <!-- REPORTS -->
+      <div id="wtab-reports" class="wtab-content space-y-5">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Reports</h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Generate a summary from the current transaction data.</p>
+        </div>
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs p-5 space-y-4">
+          <div id="report-summary" class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm"></div>
+          <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <button onclick="exportCsv()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold"><i class="fa-solid fa-file-csv mr-1.5"></i>Export CSV</button>
+            <button onclick="window.print()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold"><i class="fa-solid fa-print mr-1.5"></i>Print</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="app-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden">
+    <div class="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+      <h3 id="modal-title" class="text-lg font-bold text-slate-900 dark:text-white">Modal</h3>
+      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-xl"></i></button>
+    </div>
+    <div id="modal-body" class="p-6 max-h-[75vh] overflow-y-auto"></div>
+  </div>
+</div>
+
+<div id="toast-container" class="fixed bottom-4 right-4 z-[60] space-y-2 pointer-events-none"></div>
+
+<script>
+// ---------- Auth / permission gate ----------
+function getMember() { try { return JSON.parse(sessionStorage.getItem('nexora_logged_member') || 'null'); } catch(e) { return null; } }
+function getToken() { return sessionStorage.getItem('nexora_auth_token'); }
+
+function canUseWorkspace() {
+  const m = getMember();
+  if (!m) return false;
+  return window.hasPermission(m.role, 'finance.view');
+}
+
+function gate() {
+  const shell = document.getElementById('app-shell');
+  const restricted = document.getElementById('restricted-screen');
+  const m = getMember();
+  if (canUseWorkspace()) {
+    shell.classList.remove('hidden'); shell.classList.add('flex');
+    restricted.classList.add('hidden');
+    document.getElementById('workspace-member-name').textContent = `${m.name} · ${m.role}`;
+    loadAll();
+  } else {
+    shell.classList.add('hidden'); shell.classList.remove('flex');
+    restricted.classList.remove('hidden'); restricted.classList.add('flex');
+    document.getElementById('restricted-message').textContent = m
+      ? `You're logged in as ${m.name} (${m.role}), which doesn't have Finance access.`
+      : 'Please log in as the Accountant, President, or Vice President to open this workspace.';
+  }
+}
+document.getElementById('restricted-login-btn').onclick = () => document.getElementById('member-login').classList.remove('hidden');
+window.closeLoginModal = () => document.getElementById('member-login').classList.add('hidden');
+
+window.memberLogin = async function(e) {
+  e.preventDefault();
+  const email = document.getElementById('login-name').value.trim();
+  const password = document.getElementById('login-password').value;
+  const err = document.getElementById('login-error');
+  err.classList.add('hidden');
+  try {
+    await NexoraAuth.login(email, password);
+    closeLoginModal();
+    gate();
+  } catch (e2) { err.textContent = e2.message || 'Login failed. Please try again.'; err.classList.remove('hidden'); }
+};
+
+// ---------- Theme ----------
+window.toggleDarkMode = function() {
+  document.documentElement.classList.toggle('dark');
+  const isDark = document.documentElement.classList.contains('dark');
+  localStorage.setItem('nexora_theme', isDark ? 'dark' : 'light');
+  document.getElementById('theme-icon').className = isDark ? 'fa-solid fa-sun text-lg' : 'fa-solid fa-moon text-lg';
+};
+if (localStorage.getItem('nexora_theme') === 'dark') { document.documentElement.classList.add('dark'); }
+
+// ---------- Modal helpers ----------
+window.openModal = function(title, html) { document.getElementById('modal-title').innerText = title; document.getElementById('modal-body').innerHTML = html; document.getElementById('app-modal').classList.remove('hidden'); };
+window.closeModal = function() { document.getElementById('app-modal').classList.add('hidden'); };
+window.showToast = function(message, type = 'success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `${type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'} text-white px-4 py-3 rounded-xl shadow-lg text-sm font-semibold pointer-events-auto transition-all duration-300 translate-y-2 opacity-0`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+  setTimeout(() => { toast.classList.add('translate-y-2', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
+};
+
+// ---------- Tabs ----------
+window.switchWTab = function(tab) {
+  document.querySelectorAll('.wtab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.w-tab-btn').forEach(el => el.classList.remove('active', 'bg-slate-100', 'dark:bg-slate-800/60', 'text-emerald-600'));
+  document.getElementById('wtab-' + tab).classList.add('active');
+  const btn = document.querySelector(`.w-tab-btn[data-wtab="${tab}"]`);
+  if (btn) btn.classList.add('active', 'bg-slate-100', 'dark:bg-slate-800/60', 'text-emerald-600');
+};
+
+// ---------- Data ----------
+let financeData = {};   // id -> transaction
+let budgetData = {};    // id -> budget
+
+async function apiGet(collection) {
+  const resp = await fetch(`/api/data?collection=${collection}`);
+  if (!resp.ok) return {};
+  return resp.json();
+}
+async function apiSave(collection, id, data) {
+  const resp = await fetch('/api/data?collection=' + collection, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+    body: JSON.stringify({ id, data })
+  });
+  if (!resp.ok) { const r = await resp.json().catch(() => ({})); throw new Error(r.error || 'Save failed.'); }
+  return resp.json();
+}
+
+async function loadAll() {
+  try {
+    const [fin, bud] = await Promise.all([apiGet('finances'), apiGet('budgets')]);
+    financeData = fin || {};
+    budgetData = bud || {};
+  } catch (e) { showToast('Could not load finance data.', 'error'); }
+  renderOverview();
+  renderTransactions();
+  renderBudgets();
+  renderReport();
+}
+
+function txnList() { return Object.values(financeData).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0) || String(b.date).localeCompare(String(a.date))); }
+
+function renderOverview() {
+  const txns = txnList();
+  let income = 0, expense = 0, pending = 0;
+  txns.forEach(t => {
+    const amt = parseFloat(t.amount) || 0;
+    if (t.type === 'income') income += amt; else expense += amt;
+    if (t.approvalStatus === 'pending') pending++;
+  });
+  document.getElementById('fc-total-income').textContent = `₹${income.toFixed(2)}`;
+  document.getElementById('fc-total-expense').textContent = `₹${expense.toFixed(2)}`;
+  document.getElementById('fc-balance').textContent = `₹${(income - expense).toFixed(2)}`;
+  document.getElementById('fc-pending').textContent = pending;
+
+  const max = Math.max(income, expense, 1);
+  document.getElementById('fc-bar-chart').innerHTML = `
+    <div>
+      <div class="flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1"><span>Income</span><span>₹${income.toFixed(2)}</span></div>
+      <div class="h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:${(income/max*100).toFixed(1)}%"></div></div>
+    </div>
+    <div>
+      <div class="flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1"><span>Expense</span><span>₹${expense.toFixed(2)}</span></div>
+      <div class="h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div class="h-full bg-rose-500 rounded-full" style="width:${(expense/max*100).toFixed(1)}%"></div></div>
+    </div>`;
+
+  const recent = txns.slice(0, 5);
+  const recentList = document.getElementById('fc-recent-list');
+  if (!recent.length) {
+    recentList.innerHTML = `<div class="p-6 text-center text-sm text-slate-400">No transactions yet. Your financial records will appear here once one is added.</div>`;
+  } else {
+    recentList.innerHTML = recent.map(txnRowHtml).join('');
+  }
+}
+
+function statusBadge(status) {
+  const map = { verified: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400', pending: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400', approved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400', rejected: 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400' };
+  const label = status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Verified';
+  return `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${map[status] || map.verified}">${label}</span>`;
+}
+
+function txnRowHtml(t) {
+  const isIncome = t.type === 'income';
+  return `<div class="p-4 flex items-center justify-between gap-3">
+    <div class="min-w-0">
+      <p class="font-semibold text-sm text-slate-800 dark:text-slate-200 truncate">${esc(t.description || t.party || t.category)}</p>
+      <p class="text-xs text-slate-400">${esc(t.category || '')} · ${esc(t.date || '')}</p>
+    </div>
+    <div class="text-right shrink-0">
+      <p class="font-bold text-sm ${isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isIncome ? '+' : '-'}₹${(parseFloat(t.amount)||0).toFixed(2)}</p>
+      ${statusBadge(t.approvalStatus)}
+    </div>
+  </div>`;
+}
+
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+
+function canApprove() { const m = getMember(); return m && window.hasPermission(m.role, 'finance.approve') || (m && window.hasPermission(m.role, '*')); }
+
+function renderTransactions() {
+  const search = (document.getElementById('txn-search').value || '').toLowerCase();
+  const typeF = document.getElementById('txn-type-filter').value;
+  const statusF = document.getElementById('txn-status-filter').value;
+  const sort = document.getElementById('txn-sort').value;
+
+  let txns = txnList().filter(t => {
+    if (typeF && t.type !== typeF) return false;
+    if (statusF && (t.approvalStatus || 'verified') !== statusF) return false;
+    if (search) {
+      const hay = `${t.description||''} ${t.party||''} ${t.eventRef||''} ${t.category||''}`.toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+  txns.sort((a, b) => sort === 'oldest' ? String(a.date).localeCompare(String(b.date)) : String(b.date).localeCompare(String(a.date)));
+
+  const tbody = document.getElementById('txn-table-body');
+  const cards = document.getElementById('txn-card-list');
+
+  if (!txns.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-slate-400">No transactions match these filters.</td></tr>`;
+    cards.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-400">No transactions match these filters.</div>`;
+    return;
+  }
+
+  tbody.innerHTML = txns.map(t => {
+    const isIncome = t.type === 'income';
+    const approveBtns = (!isIncome && t.approvalStatus === 'pending' && canApprove())
+      ? `<button onclick="setApproval('${t.id}','approved')" class="text-emerald-600 hover:underline text-xs font-semibold mr-2">Approve</button><button onclick="setApproval('${t.id}','rejected')" class="text-rose-600 hover:underline text-xs font-semibold">Reject</button>`
+      : '';
+    return `<tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
+      <td class="py-3 px-5 font-semibold text-slate-800 dark:text-slate-200">${esc(t.description||'—')}</td>
+      <td class="py-3 px-5"><span class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-medium">${esc(t.category||'—')}</span></td>
+      <td class="py-3 px-5 text-slate-500 dark:text-slate-400 text-xs">${esc(t.party||'—')}</td>
+      <td class="py-3 px-5 text-slate-500 dark:text-slate-400 text-xs">${esc(t.date||'—')}</td>
+      <td class="py-3 px-5">${statusBadge(t.approvalStatus)}</td>
+      <td class="py-3 px-5 text-right font-bold ${isIncome?'text-emerald-600 dark:text-emerald-400':'text-rose-600 dark:text-rose-400'}">${isIncome?'+':'-'}₹${(parseFloat(t.amount)||0).toFixed(2)}</td>
+      <td class="py-3 px-5 text-right">${approveBtns}<button onclick="deleteTxn('${t.id}')" class="text-slate-400 hover:text-rose-600 ml-2"><i class="fa-solid fa-trash"></i></button></td>
+    </tr>`;
+  }).join('');
+
+  cards.innerHTML = txns.map(t => {
+    const isIncome = t.type === 'income';
+    return `<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs">
+      <div class="flex items-start justify-between gap-2 mb-1">
+        <div class="min-w-0"><p class="font-semibold text-sm text-slate-800 dark:text-slate-200 truncate">${esc(t.description||t.category)}</p><p class="text-xs text-slate-400">${esc(t.party||'')} · ${esc(t.date||'')}</p></div>
+        <p class="font-bold text-sm shrink-0 ${isIncome?'text-emerald-600 dark:text-emerald-400':'text-rose-600 dark:text-rose-400'}">${isIncome?'+':'-'}₹${(parseFloat(t.amount)||0).toFixed(2)}</p>
+      </div>
+      <div class="flex items-center justify-between mt-2">${statusBadge(t.approvalStatus)}<button onclick="deleteTxn('${t.id}')" class="text-slate-400 hover:text-rose-600 text-xs"><i class="fa-solid fa-trash"></i></button></div>
+    </div>`;
+  }).join('');
+}
+
+window.setApproval = async function(id, status) {
+  const m = getMember();
+  const t = financeData[id];
+  if (!t) return;
+  try {
+    await apiSave('finances', id, { ...t, approvalStatus: status, approvedBy: m.name, approvedAt: Date.now() });
+    financeData[id] = { ...t, approvalStatus: status, approvedBy: m.name, approvedAt: Date.now() };
+    showToast(`Transaction ${status}.`);
+    renderOverview(); renderTransactions(); renderReport();
+  } catch (e) { showToast(e.message, 'error'); }
+};
+
+window.deleteTxn = async function(id) {
+  if (!confirm('Delete this transaction? This cannot be undone.')) return;
+  try {
+    const resp = await fetch('/api/data?collection=finances', { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }, body: JSON.stringify({ id }) });
+    if (!resp.ok) { const r = await resp.json().catch(()=>({})); throw new Error(r.error || 'Delete failed.'); }
+    delete financeData[id];
+    showToast('Transaction deleted.');
+    renderOverview(); renderTransactions(); renderReport();
+  } catch (e) { showToast(e.message, 'error'); }
+};
+
+function renderBudgets() {
+  const list = document.getElementById('budgets-list');
+  const budgets = Object.values(budgetData);
+  if (!budgets.length) {
+    list.innerHTML = `<div class="col-span-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-400">No budgets set yet. Budgets created in the Budget Manager will appear here with live utilization.</div>`;
+    return;
+  }
+  list.innerHTML = budgets.map(b => {
+    const approved = parseFloat(b.approvedAmount) || 0;
+    const spent = parseFloat(b.spent) || 0;
+    const pct = approved > 0 ? Math.min(100, (spent / approved) * 100) : 0;
+    const barColor = pct >= 100 ? 'bg-rose-500' : pct >= 85 ? 'bg-amber-500' : pct >= 70 ? 'bg-amber-400' : 'bg-emerald-500';
+    return `<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
+      <div class="flex justify-between items-center mb-2"><h4 class="font-bold text-slate-800 dark:text-slate-200">${esc(b.eventName||'Untitled')}</h4><span class="text-xs font-semibold text-slate-400">${pct.toFixed(1)}%</span></div>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">₹${spent.toFixed(2)} / ₹${approved.toFixed(2)}</p>
+      <div class="h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div class="h-full ${barColor} rounded-full" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderReport() {
+  const txns = txnList();
+  let income = 0, expense = 0, approved = 0, rejected = 0;
+  txns.forEach(t => { const amt = parseFloat(t.amount)||0; if (t.type==='income') income+=amt; else expense+=amt; if (t.approvalStatus==='approved') approved++; if (t.approvalStatus==='rejected') rejected++; });
+  document.getElementById('report-summary').innerHTML = `
+    <div><p class="text-[11px] uppercase text-slate-400 font-bold">Transactions</p><p class="font-bold text-slate-800 dark:text-slate-200">${txns.length}</p></div>
+    <div><p class="text-[11px] uppercase text-slate-400 font-bold">Total Income</p><p class="font-bold text-emerald-600">₹${income.toFixed(2)}</p></div>
+    <div><p class="text-[11px] uppercase text-slate-400 font-bold">Total Expense</p><p class="font-bold text-rose-600">₹${expense.toFixed(2)}</p></div>
+    <div><p class="text-[11px] uppercase text-slate-400 font-bold">Net Balance</p><p class="font-bold text-slate-800 dark:text-slate-200">₹${(income-expense).toFixed(2)}</p></div>`;
+}
+
+window.exportCsv = function() {
+  const rows = [['Type','Description','Category','Party','Event','Date','Amount','Status']];
+  txnList().forEach(t => rows.push([t.type,t.description,t.category,t.party,t.eventRef,t.date,t.amount,t.approvalStatus||'verified']));
+  const csv = rows.map(r => r.map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'nexora-finance-report.csv';
+  a.click();
+};
+
+// ---------- Add income/expense ----------
+const INCOME_CATEGORIES = ['Event Registration','Sponsorship','Donation','Membership','Other'];
+const EXPENSE_CATEGORIES = ['Event','Decoration','Printing','Food','Transport','Equipment','Marketing','Technical','Miscellaneous'];
+
+window.openTxnModal = function(type) {
+  const cats = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  const partyLabel = type === 'income' ? 'Received From' : 'Paid To';
+  openModal(type === 'income' ? 'Add Income' : 'Add Expense', `
+    <form onsubmit="saveTxn(event, '${type}')" class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Amount (₹)</label><input type="number" step="0.01" min="0" id="t-amount" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"></div>
+        <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Date</label><input type="date" id="t-date" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"></div>
+      </div>
+      <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Category</label>
+        <select id="t-category" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white">${cats.map(c=>`<option value="${c}">${c}</option>`).join('')}</select>
+      </div>
+      <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">${partyLabel}</label><input type="text" id="t-party" placeholder="${partyLabel}" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"></div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Event / Project</label><input type="text" id="t-event" placeholder="Optional" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"></div>
+        <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Payment Method</label>
+          <select id="t-method" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option><option>Other</option></select>
+        </div>
+      </div>
+      <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Reference / Transaction ID</label><input type="text" id="t-ref" placeholder="Optional" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"></div>
+      <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Description</label><textarea id="t-desc" rows="2" placeholder="Short note" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"></textarea></div>
+      <p class="text-[11px] text-slate-400">${type==='expense' ? 'New expenses are recorded as "Pending" until approved by leadership.' : 'Income is recorded as "Verified" immediately.'}</p>
+      <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold">Cancel</button>
+        <button type="submit" class="px-5 py-2 ${type==='income'?'bg-emerald-600 hover:bg-emerald-700':'bg-rose-600 hover:bg-rose-700'} text-white rounded-xl text-sm font-semibold shadow-md">Save Transaction</button>
+      </div>
+    </form>
+  `);
+};
+
+window.saveTxn = async function(e, type) {
+  e.preventDefault();
+  const m = getMember();
+  const id = `fin_${Date.now()}`;
+  const desc = document.getElementById('t-desc').value.trim();
+  const category = document.getElementById('t-category').value;
+  const party = document.getElementById('t-party').value.trim();
+  const data = {
+    id, type,
+    description: desc || `${category}${party ? ' — ' + party : ''}`,
+    category,
+    party,
+    eventRef: document.getElementById('t-event').value.trim(),
+    paymentMethod: document.getElementById('t-method').value,
+    referenceId: document.getElementById('t-ref').value.trim(),
+    amount: parseFloat(document.getElementById('t-amount').value),
+    date: document.getElementById('t-date').value,
+    approvalStatus: type === 'income' ? 'verified' : 'pending',
+    createdBy: m.name,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+  try {
+    await apiSave('finances', id, data);
+    financeData[id] = data;
+    closeModal();
+    showToast(type === 'income' ? 'Income recorded.' : 'Expense recorded — pending approval.');
+    renderOverview(); renderTransactions(); renderReport();
+  } catch (err) { showToast(err.message, 'error'); }
+};
+
+gate();
+</script>
+</body>
+</html>
