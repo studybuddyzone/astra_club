@@ -6,19 +6,28 @@
 
 const { db } = require('../lib/firebaseAdmin');
 const { verifyToken } = require('../lib/authToken');
+const { hasAnyPermission } = require('../lib/permissions');
 
 // Keeps the same Firestore location the site already used, so existing
 // cloud data (if any) is not orphaned.
 const APP_ID = 'nexora-club-app';
 
-const ALL_COLLECTIONS = ['events', 'finances', 'announcements', 'tasks', 'suggestions'];
+const ALL_COLLECTIONS = ['events', 'finances', 'announcements', 'tasks', 'suggestions', 'budgets', 'inventory'];
 
-// Anyone can add/upvote a suggestion; the rest need an officer login.
-// TODO: once the full list of roles/permissions arrives, replace this with
-// a proper per-role permission map (accountant -> finances, secretary ->
-// announcements, event manager -> events, etc).
-const OFFICER_ONLY_COLLECTIONS = ['events', 'finances', 'announcements', 'tasks'];
-const EDIT_ROLES = ['president', 'vice president', 'vice_president'];
+// Anyone can add/upvote a suggestion; the rest need an officer login with the
+// right permission (see lib/permissions.js for the full role->permission map).
+const OFFICER_ONLY_COLLECTIONS = ['events', 'finances', 'announcements', 'tasks', 'budgets', 'inventory'];
+
+// A write to a collection is allowed if the caller's role holds ANY one of
+// the listed permissions. president/vice-president hold '*' and always pass.
+const COLLECTION_WRITE_PERMISSIONS = {
+  events: ['event.create', 'event.edit', 'event.edit-operations'],
+  finances: ['finance.create', 'finance.edit', 'finance.approve'],
+  announcements: ['announcement.create', 'announcement.edit'],
+  tasks: ['task.edit', 'task.assign'],
+  budgets: ['finance.edit', 'budget.view'],
+  inventory: ['inventory.create', 'inventory.edit', 'inventory.issue', 'inventory.return']
+};
 
 function collectionRef(name) {
   return db
@@ -37,7 +46,8 @@ function canEdit(req, collectionName) {
   if (!OFFICER_ONLY_COLLECTIONS.includes(collectionName)) return true; // public write
   const payload = verifyToken(getToken(req));
   if (!payload) return false;
-  return EDIT_ROLES.includes(String(payload.role || '').toLowerCase());
+  const required = COLLECTION_WRITE_PERMISSIONS[collectionName] || [];
+  return hasAnyPermission(payload.role, required);
 }
 
 module.exports = async (req, res) => {
