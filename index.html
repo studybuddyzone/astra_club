@@ -29,10 +29,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Central role directory + permission matrix, shared with every role workspace page -->
     <script src="roles-data.js"></script>
-    <!-- Firebase Auth (email/password) — see firebase-config.js to connect your project -->
-    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-    <script src="firebase-config.js"></script>
+    <!-- Login helper: posts email+password to our own backend; no Firebase code runs in the browser -->
     <script src="nexora-auth.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }

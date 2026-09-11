@@ -70,9 +70,9 @@ NOT be able to log into `management-manager.html`, and vice versa. Treat
 
 ## 9. Real Firebase Auth + Realtime Database login — added
 
-Login now works exactly like you described: Firebase Auth (email +
-password) for identity, Realtime Database for role — two separate checks,
-both must pass.
+Login works with two independent checks, and **all of it happens on the
+server** — the browser never loads any Firebase SDK or config file, it only
+ever talks to your own `/api/session` endpoint.
 
 ### One-time setup (you do this in the Firebase Console)
 1. **Authentication** → Sign-in method → enable **Email/Password**.
@@ -80,15 +80,28 @@ both must pass.
    note the URL, it looks like
    `https://YOUR-PROJECT-default-rtdb.firebaseio.com` or
    `...-default-rtdb.<region>.firebasedatabase.app`.
-3. In your hosting environment (Vercel Project Settings → Environment
-   Variables), add: `FIREBASE_DATABASE_URL` = that URL. (`FIREBASE_SERVICE_ACCOUNT`
-   should already be set from the original setup.)
-4. In **Project Settings → General → Your apps → Web app**, copy the
-   `firebaseConfig` object and paste its values into `firebase-config.js`
-   at the project root. These values are public by design — not secret.
+3. **Project Settings → General** → scroll to "Your apps" → if there's no
+   web app yet, add one (you don't need to use its SDK snippet, just need
+   the key) → copy the **Web API Key** shown there.
+4. In your hosting environment (Vercel Project Settings → Environment
+   Variables), add:
+   - `FIREBASE_DATABASE_URL` = the Realtime Database URL from step 2
+   - `FIREBASE_WEB_API_KEY` = the Web API Key from step 3
+   (`FIREBASE_SERVICE_ACCOUNT` should already be set from the original setup.)
 5. **Realtime Database → Rules**: set both `.read` and `.write` to `false`
    at the root. Only your backend (Admin SDK, which always bypasses rules)
-   should ever touch `/members` — never the browser directly.
+   should ever touch `/members`.
+
+That's it — there is no client-side config file to edit. `FIREBASE_WEB_API_KEY`
+is only ever read inside `api/session.js`, on the server, via
+`process.env.FIREBASE_WEB_API_KEY`.
+
+> Note: a Firebase Web API Key is not a secret in the way a service-account
+> key is — Google's own docs say it's safe even in client code, since it
+> only identifies which project an Auth request is for. Keeping it
+> server-side here isn't required for security, it's simply what you asked
+> for: nothing Firebase-related loads in the browser, and your locked-down
+> `.read`/`.write: false` rules remain the actual data-access boundary.
 
 ### Creating your own (first) account
 Since there's no Joint Secretary yet to create your ID, create the very
@@ -124,14 +137,17 @@ first one by hand, once:
    login should be created from now on — no more manual UID copying.
 
 ### How login works now (every page)
-1. Browser calls `firebase.auth().signInWithEmailAndPassword()` —
-   **verification 1**, proves the email/password is real.
-2. Browser sends the resulting ID token to `POST /api/session` —
-   **verification 2**: the server re-verifies the token, then looks up
-   `/members/{uid}` in the Realtime Database. No record there (or no
-   `role` field) = **"Permission denied"**, even though Firebase Auth
-   itself succeeded.
-3. On success, `/api/session` issues the same signed session token the
+1. Browser posts `{ email, password }` to `POST /api/session` — nothing
+   else, no Firebase code runs client-side.
+2. **Verification 1 (password):** the server calls Firebase's Identity
+   Toolkit REST API itself, using `FIREBASE_WEB_API_KEY`, to check the
+   email/password pair — the same check `signInWithEmailAndPassword()`
+   does internally, just run on the backend instead of the browser.
+3. **Verification 2 (role):** once the password checks out, the server
+   looks up `/members/{uid}` in the Realtime Database. No record there (or
+   no `role` field) = **"Permission denied,"** even though the password
+   was correct.
+4. On success, `/api/session` issues the same signed session token the
    rest of the site (`/api/data`, `/api/create-member`) already expects,
    so nothing else had to change.
 
