@@ -286,3 +286,47 @@ role (via `members.view` / `*`).
 > For a large member list, add an index in Realtime Database → Rules:
 > `{ "rules": { "members": { ".indexOn": ["reportsTo"] } } }` — not
 > required to work, just keeps queries fast as the roster grows.
+
+## 13. Daily Work Report System + Joint Secretary Report Center — added
+
+Every role now has a **Send Report** button (top-right of their
+workspace), and Joint Secretary has a full **Central Report Center**.
+
+### How it works
+- `report-system.js` — one shared modal/form used by every workspace
+  (`role-workspace.html`, `accountant-workspace.html`,
+  `photography-workspace.html`, `joint-secretary-workspace.html`). Fields:
+  date, priority, work title/description, tasks completed/pending,
+  achievements, issues, related event, next-day plan. Name/role/department/
+  timestamp are filled in automatically from the logged-in session.
+- Reports save to the shared `reports` Firestore collection via the same
+  `/api/data` endpoint everything else uses. **Everyone has
+  `report.create`** now (added as a base permission every role gets
+  automatically — see `lib/permissions.js`), and can edit their own report
+  after submitting; only Joint Secretary/President/VP (`report.review` /
+  `report.approve` / `*`) can edit or review someone else's.
+- **Joint Secretary's Report Center** (now the default tab when they log
+  in): dashboard cards (Today / Pending / Approved / Needs Revision /
+  Total), a live "Today's Work" summary, search + filters (status, role,
+  date), and a table (cards on mobile) with **View → Approve / Reject /
+  Request Revision**. Comments are asked for on Reject/Revision.
+- **PDF**: rather than add a heavy PDF-generation dependency, "Download
+  PDF" opens a clean, officially-formatted print view (club header, report
+  ID, member/role/date table, all sections, reviewer/approval line, footer
+  with a generated timestamp) in a new tab and triggers the browser's
+  Print dialog — choosing "Save as PDF" there produces a proper PDF with
+  zero extra setup. **Print Selected** does the same for multiple
+  checked reports at once (each report gets its own page).
+
+### What's intentionally simpler than the full spec, for now
+- Statuses are `Submitted / Approved / Needs Revision / Rejected` (no
+  separate Draft/Received/Under Review/Archived states yet).
+- No true binary PDF library (e.g. `pdfkit`) — the print-to-PDF flow above
+  covers "professional PDF" without adding a new dependency; say the word
+  if you'd rather have server-generated PDF files instead.
+- Reports aren't yet cross-linked to specific `taskId`/`eventId` records
+  beyond the free-text "Event Related" field.
+
+These are the next logical additions on top of what's built — the
+end-to-end flow (submit → central inbox → review → approve/reject →
+printable record) is fully working today.

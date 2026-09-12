@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="roles-data.js"></script>
 <script src="astra-auth.js"></script>
+<script src="report-system.js"></script>
 <style>
   body { font-family: 'Inter', sans-serif; }
   .font-display { font-family: 'Outfit', sans-serif; }
@@ -71,6 +72,7 @@
     </div>
     <div class="flex items-center gap-2">
       <span id="workspace-member-name" class="hidden sm:inline text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1"></span>
+      <button id="send-report-btn" onclick="sendMyReport()" class="hidden px-3 py-2 rounded-xl text-white text-xs font-semibold transition" style="background:var(--accent-600)"><i class="fa-solid fa-paper-plane mr-1"></i>Send Report</button>
       <a href="index.html" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition"><i class="fa-solid fa-arrow-left mr-1"></i>Main Site</a>
       <button onclick="toggleDarkMode()" class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"><i id="theme-icon" class="fa-solid fa-moon text-lg"></i></button>
     </div>
@@ -189,6 +191,8 @@ function canWriteHere() {
   return window.hasPermission(m.role, '*') || window.normalizeRole(m.role) === role.id;
 }
 
+function sendMyReport() { AstraReports.open(role.id, role.name, role.group); }
+
 function gate() {
   if (!role) return;
   const shell = document.getElementById('app-shell');
@@ -198,6 +202,7 @@ function gate() {
     shell.classList.remove('hidden'); shell.classList.add('flex');
     restricted.classList.add('hidden');
     document.getElementById('workspace-member-name').textContent = `${m.name} · ${m.role}`;
+    document.getElementById('send-report-btn').classList.remove('hidden');
     if (canWriteHere()) document.getElementById('add-task-btn').classList.remove('hidden');
     loadAll();
   } else {
