@@ -1,10 +1,10 @@
 // roles-data.js
 // Shared, client-side role metadata for the Team & Roles grid and for every
-// workspace page's permission gating. Keep NEXORA_PERMISSIONS in sync with
+// workspace page's permission gating. Keep ASTRA_PERMISSIONS in sync with
 // lib/permissions.js (server-enforced copy) — this client copy only decides
 // what to SHOW, the server always decides what is actually ALLOWED.
 
-window.NEXORA_PERMISSIONS = {
+window.ASTRA_PERMISSIONS = {
   'president': ['*'],
   'vice-president': ['*'],
   'deputy-president': ['event.view','event.edit','task.view','task.edit','announcement.view','finance.view','finance.approve','team.view','report.view'],
@@ -34,7 +34,7 @@ window.normalizeRole = function normalizeRole(role) {
 };
 
 window.hasPermission = function hasPermission(role, permission) {
-  const perms = window.NEXORA_PERMISSIONS[window.normalizeRole(role)] || [];
+  const perms = window.ASTRA_PERMISSIONS[window.normalizeRole(role)] || [];
   return perms.includes('*') || perms.includes(permission);
 };
 
@@ -42,7 +42,7 @@ window.hasPermission = function hasPermission(role, permission) {
 // workspace.type: 'functional' (real dashboard exists), 'legacy' (works via
 // an existing manager page), or 'info' (responsibilities only, workspace not
 // built yet — never label these as functional, per project rules).
-window.NEXORA_ROLES = [
+window.ASTRA_ROLES = [
   { id: 'president', name: 'President', group: 'Leadership', icon: 'fa-crown', accent: 'indigo',
     summary: 'Overall club direction — oversees every department, event, finances, tasks and approvals.',
     tags: ['Overview', 'Approvals', 'Team'],
@@ -54,15 +54,15 @@ window.NEXORA_ROLES = [
   { id: 'deputy-president', name: 'Deputy President', group: 'Leadership', icon: 'fa-shield-halved', accent: 'indigo',
     summary: 'Follows up on departments, monitors tasks and events, and reports progress to leadership.',
     tags: ['Monitoring', 'Escalation'],
-    permission: 'team.view', workspace: { type: 'info' } },
+    permission: 'team.view', workspace: { type: 'functional', url: 'role-workspace.html?role=deputy-president', label: 'Open Deputy President Workspace' } },
   { id: 'vice-deputy-president', name: 'Vice Deputy President', group: 'Leadership', icon: 'fa-shield', accent: 'indigo',
     summary: 'Assists the Deputy President with department follow-up and team coordination.',
     tags: ['Coordination'],
-    permission: 'team.view', workspace: { type: 'info' } },
+    permission: 'team.view', workspace: { type: 'functional', url: 'role-workspace.html?role=vice-deputy-president', label: 'Open Vice Deputy President Workspace' } },
   { id: 'secretary', name: 'Secretary', group: 'Administration', icon: 'fa-pen-to-square', accent: 'sky',
     summary: 'Maintains official records, meeting minutes, notices and follow-ups on decisions.',
     tags: ['Records', 'Minutes', 'Notices'],
-    permission: 'document.manage', workspace: { type: 'info' } },
+    permission: 'document.manage', workspace: { type: 'functional', url: 'role-workspace.html?role=secretary', label: 'Open Secretary Workspace' } },
   { id: 'joint-secretary', name: 'Joint Secretary', group: 'Administration', icon: 'fa-file-signature', accent: 'sky',
     summary: 'Assists the Secretary with meeting scheduling, attendance and administrative records. Also creates and manages member login IDs.',
     tags: ['Scheduling', 'Attendance', 'ID Creation'],
@@ -74,62 +74,62 @@ window.NEXORA_ROLES = [
   { id: 'event-head', name: 'Event Head', group: 'Events', icon: 'fa-star-of-life', accent: 'amber',
     summary: 'Plans events, builds timelines, assigns responsibilities and coordinates across departments.',
     tags: ['Planning', 'Timelines', 'Coordination'],
-    permission: 'event.create', workspace: { type: 'info' } },
+    permission: 'event.create', workspace: { type: 'functional', url: 'role-workspace.html?role=event-head', label: 'Open Event Head Workspace' } },
   { id: 'event-manager', name: 'Event Manager', group: 'Events', icon: 'fa-calendar-check', accent: 'amber',
     summary: 'Executes event operations — checklists, logistics and on-ground task tracking.',
     tags: ['Checklists', 'Logistics'],
-    permission: 'event.edit-operations', workspace: { type: 'info' } },
+    permission: 'event.edit-operations', workspace: { type: 'functional', url: 'role-workspace.html?role=event-manager', label: 'Open Event Manager Workspace' } },
   { id: 'store-manager', name: 'Store Manager', group: 'Operations', icon: 'fa-boxes-stacked', accent: 'rose',
     summary: 'Tracks inventory, stock in/out, suppliers and event equipment allocation.',
     tags: ['Inventory', 'Stock', 'Allocation'],
-    permission: 'inventory.view', workspace: { type: 'info' } },
+    permission: 'inventory.view', workspace: { type: 'functional', url: 'role-workspace.html?role=store-manager', label: 'Open Store Manager Workspace' } },
   { id: 'marketing-head', name: 'Marketing Head', group: 'Outreach', icon: 'fa-bullseye', accent: 'violet',
     summary: 'Runs promotion campaigns, the promotion calendar and partnerships for club events.',
     tags: ['Campaigns', 'Promotion'],
-    permission: 'campaign.manage', workspace: { type: 'info' } },
+    permission: 'campaign.manage', workspace: { type: 'functional', url: 'role-workspace.html?role=marketing-head', label: 'Open Marketing Head Workspace' } },
   { id: 'social-media-head', name: 'Social Media Head', group: 'Outreach', icon: 'fa-hashtag', accent: 'violet',
     summary: 'Owns the content calendar, posts, stories and engagement tracking across platforms.',
     tags: ['Content', 'Calendar'],
-    permission: 'content.manage', workspace: { type: 'info' } },
+    permission: 'content.manage', workspace: { type: 'functional', url: 'role-workspace.html?role=social-media-head', label: 'Open Social Media Head Workspace' } },
   { id: 'photography', name: 'Photography', group: 'Outreach', icon: 'fa-camera', accent: 'violet',
-    summary: 'Handles event photography assignments, shot lists, the photo archive and delivery.',
-    tags: ['Shoots', 'Archive'],
-    permission: 'media.manage', workspace: { type: 'info' } },
+    summary: 'Uploads event photos straight to the club gallery (via Cloudinary) and manages the photo archive.',
+    tags: ['Shoots', 'Archive', 'Gallery'],
+    permission: 'media.manage', workspace: { type: 'functional', url: 'photography-workspace.html', label: 'Open Gallery Workspace' } },
   { id: 'technical-head', name: 'Technical Head', group: 'Technical', icon: 'fa-microchip', accent: 'cyan',
     summary: 'Manages website/technical tasks, digital tools and event technical requirements.',
     tags: ['Website', 'Equipment'],
-    permission: 'technical.manage', workspace: { type: 'info' } },
+    permission: 'technical.manage', workspace: { type: 'functional', url: 'role-workspace.html?role=technical-head', label: 'Open Technical Head Workspace' } },
   { id: 'cultural-head', name: 'Cultural Head', group: 'Programs', icon: 'fa-masks-theater', accent: 'orange',
     summary: 'Organizes performers, auditions, rehearsals and the performance schedule.',
     tags: ['Performers', 'Schedule'],
-    permission: 'cultural.manage', workspace: { type: 'info' } },
+    permission: 'cultural.manage', workspace: { type: 'functional', url: 'role-workspace.html?role=cultural-head', label: 'Open Cultural Head Workspace' } },
   { id: 'discipline-head', name: 'Discipline Head', group: 'Operations', icon: 'fa-user-shield', accent: 'rose',
     summary: 'Oversees event discipline, crowd management and incident reporting to leadership.',
     tags: ['Discipline', 'Incidents'],
-    permission: 'discipline.manage', workspace: { type: 'info' } },
+    permission: 'discipline.manage', workspace: { type: 'functional', url: 'role-workspace.html?role=discipline-head', label: 'Open Discipline Head Workspace' } },
   { id: 'student-coordinator', name: 'Student Coordinator', group: 'Outreach', icon: 'fa-people-group', accent: 'violet',
     summary: 'Keeps students informed of deadlines and opportunities, and collects participation.',
     tags: ['Communication', 'Feedback'],
-    permission: 'communication.manage', workspace: { type: 'info' } },
+    permission: 'communication.manage', workspace: { type: 'functional', url: 'role-workspace.html?role=student-coordinator', label: 'Open Student Coordinator Workspace' } },
   { id: 'girls-representative', name: "Girls' Representative", group: 'Representation', icon: 'fa-comments', accent: 'pink',
     summary: 'Collects feedback, suggestions and concerns, escalating them to leadership as needed.',
     tags: ['Feedback', 'Escalation'],
-    permission: 'feedback.manage', workspace: { type: 'info' } },
+    permission: 'feedback.manage', workspace: { type: 'functional', url: 'role-workspace.html?role=girls-representative', label: "Open Girls' Representative Workspace" } },
   { id: 'boys-representative', name: "Boys' Representative", group: 'Representation', icon: 'fa-comments', accent: 'pink',
     summary: 'Collects feedback, suggestions and concerns, escalating them to leadership as needed.',
     tags: ['Feedback', 'Escalation'],
-    permission: 'feedback.manage', workspace: { type: 'info' } },
+    permission: 'feedback.manage', workspace: { type: 'functional', url: 'role-workspace.html?role=boys-representative', label: "Open Boys' Representative Workspace" } },
   { id: 'strategy-planning-head', name: 'Strategy & Planning Head', group: 'Leadership', icon: 'fa-diagram-project', accent: 'indigo',
     summary: 'Builds strategic plans, timelines and priorities, and reviews event performance.',
     tags: ['Roadmap', 'Review'],
-    permission: 'strategy.manage', workspace: { type: 'info' } },
+    permission: 'strategy.manage', workspace: { type: 'functional', url: 'role-workspace.html?role=strategy-planning-head', label: 'Open Strategy & Planning Head Workspace' } },
   { id: 'creativity-head', name: 'Creativity Head', group: 'Programs', icon: 'fa-palette', accent: 'orange',
     summary: 'Runs creative/design requests, campaign concepts and brand asset approvals.',
     tags: ['Design', 'Approvals'],
-    permission: 'creative.manage', workspace: { type: 'info' } }
+    permission: 'creative.manage', workspace: { type: 'functional', url: 'role-workspace.html?role=creativity-head', label: 'Open Creativity Head Workspace' } }
 ];
 
-window.NEXORA_ACCENTS = {
+window.ASTRA_ACCENTS = {
   indigo: { bg: 'bg-indigo-100 dark:bg-indigo-950/60', text: 'text-indigo-600 dark:text-indigo-400', chip: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400' },
   sky: { bg: 'bg-sky-100 dark:bg-sky-950/60', text: 'text-sky-600 dark:text-sky-400', chip: 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400' },
   emerald: { bg: 'bg-emerald-100 dark:bg-emerald-950/60', text: 'text-emerald-600 dark:text-emerald-400', chip: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400' },

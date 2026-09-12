@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexora - Club Management Suite</title>
+    <title>Astra - Club Management Suite</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -30,7 +30,7 @@
     <!-- Central role directory + permission matrix, shared with every role workspace page -->
     <script src="roles-data.js"></script>
     <!-- Login helper: posts email+password to our own backend; no Firebase code runs in the browser -->
-    <script src="nexora-auth.js"></script>
+    <script src="astra-auth.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         .font-display { font-family: 'Outfit', sans-serif; }
@@ -129,7 +129,7 @@
             <div class="logo-icon">
                 <i class="fa-solid fa-bolt"></i>
             </div>
-            <h1 class="brand-name">Nexora</h1>
+            <h1 class="brand-name">Astra</h1>
         </div>
     </div>
 
@@ -147,7 +147,7 @@
             <form onsubmit="memberLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Email</label>
-                    <input id="login-name" type="email" required autocomplete="username" placeholder="you@nexora.club"
+                    <input id="login-name" type="email" required autocomplete="username" placeholder="you@astra.club"
                         class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
                 <div>
@@ -188,9 +188,9 @@
             </div>
             <div>
                 <h1 class="font-bold text-lg leading-tight tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                    Nexora <span id="sync-status" class="text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400"><i class="fa-solid fa-spinner animate-spin"></i> Connecting...</span>
+                    Astra <span id="sync-status" class="text-xs font-normal px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400"><i class="fa-solid fa-spinner animate-spin"></i> Connecting...</span>
                 </h1>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Nexora Club Management Suite</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Astra Club Management Suite</p>
             </div>
         </div>
 
@@ -241,6 +241,9 @@
                 <button onclick="switchTab('team')" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" data-tab="team">
                     <i class="fa-solid fa-users w-5 text-center"></i> Team & Roles
                 </button>
+                <button onclick="switchTab('gallery')" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" data-tab="gallery">
+                    <i class="fa-solid fa-camera w-5 text-center"></i> Gallery
+                </button>
             </nav>
 
             <div class="pt-6 mt-6 border-t border-slate-200 dark:border-slate-800">
@@ -260,7 +263,7 @@
             <div id="tab-dashboard" class="tab-content active space-y-6">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Nexora Dashboard</h2>
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Astra Dashboard</h2>
                         <p class="text-sm text-slate-500 dark:text-slate-400">Welcome back! Here are the latest events and announcement.</p>
                     </div>
                     <div class="flex items-center gap-3">
@@ -329,7 +332,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div class="flex items-center justify-between gap-4"><h2 class="text-2xl font-bold text-slate-900 dark:text-white">Events & Calendar</h2><a href="event-manager.html" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold president-only"><i class="fa-solid fa-gear mr-2"></i>Manage Events</a></div>
-                        <p class="text-sm text-slate-500 dark:text-slate-400">Plan Nexora meetings, workshops, socials, and activities.</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Plan Astra meetings, workshops, socials, and activities.</p>
                     </div>
                     <div class="flex items-center gap-3">
                         <a href="event-manager.html" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition flex items-center gap-2 president-only">
@@ -351,7 +354,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div class="flex items-center justify-between gap-4"><h2 class="text-2xl font-bold text-slate-900 dark:text-white">Dues & Finances</h2><a href="budget-manager.html" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold president-only"><i class="fa-solid fa-wallet mr-2"></i>Budget Manager</a></div>
-                        <p class="text-sm text-slate-500 dark:text-slate-400">Monitor Nexora treasury, income, and member dues payments.</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Monitor Astra treasury, income, and member dues payments.</p>
                     </div>
                     <div class="flex items-center gap-3">
                         <button onclick="openAddTransactionModal('income')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-500/20 transition flex items-center gap-2">
@@ -407,7 +410,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Active Announcement</h2>
-                        <p class="text-sm text-slate-500 dark:text-slate-400">Broadcast notice to Nexora members (1 active announcement displayed at a time).</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Broadcast notice to Astra members (1 active announcement displayed at a time).</p>
                     </div>
                     <button onclick="openAddAnnouncementModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-500/20 transition flex items-center gap-2">
                         <i class="fa-solid fa-bullhorn"></i> Update Announcement
@@ -469,7 +472,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Suggestion Box</h2>
-                        <p class="text-sm text-slate-500 dark:text-slate-400">Collect, upvote, and discuss ideas to improve Nexora.</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Collect, upvote, and discuss ideas to improve Astra.</p>
                     </div>
                     <button onclick="openAddSuggestionModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-500/20 transition flex items-center gap-2">
                         <i class="fa-solid fa-plus"></i> Submit Suggestion
@@ -493,6 +496,20 @@
                 </div>
             </div>
 
+            <!-- TAB 8: GALLERY -->
+            <div id="tab-gallery" class="tab-content space-y-6">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Gallery</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Photos from club events, uploaded by the Photography team.</p>
+                    </div>
+                    <a href="photography-workspace.html" class="text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline"><i class="fa-solid fa-camera mr-1"></i>Photography Workspace</a>
+                </div>
+                <div id="gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <!-- Populated by renderGallery() -->
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -513,7 +530,7 @@
         function syncLocalData() {
             localCollections.forEach(name => {
                 try {
-                    const saved = JSON.parse(localStorage.getItem(`nexora_${name}`) || 'null');
+                    const saved = JSON.parse(localStorage.getItem(`astra_${name}`) || 'null');
                     if (Array.isArray(saved)) {
                         window.clubData[name] = {};
                         saved.forEach(item => { window.clubData[name][item.id] = item; });
@@ -524,14 +541,14 @@
         function saveLocalData(name) {
             if (!localCollections.includes(name)) return;
             try {
-                localStorage.setItem(`nexora_${name}`, JSON.stringify(Object.values(window.clubData[name])));
+                localStorage.setItem(`astra_${name}`, JSON.stringify(Object.values(window.clubData[name])));
             } catch (err) { console.warn(`Could not save local ${name}:`, err); }
         }
 
         syncLocalData();
 
         window.addEventListener('storage', (event) => {
-            if (event.key && localCollections.includes(event.key.replace('nexora_', ''))) {
+            if (event.key && localCollections.includes(event.key.replace('astra_', ''))) {
                 syncLocalData();
                 refreshUI();
             }
@@ -569,7 +586,7 @@
                     const cloudData = results[i] || {};
                     if (localCollections.includes(name)) {
                         // Keep any not-yet-synced offline items around too
-                        const localSaved = JSON.parse(localStorage.getItem(`nexora_${name}`) || '[]');
+                        const localSaved = JSON.parse(localStorage.getItem(`astra_${name}`) || '[]');
                         localSaved.forEach(item => { if (!cloudData[item.id]) cloudData[item.id] = item; });
                         window.clubData[name] = cloudData;
                         saveLocalData(name);
@@ -599,16 +616,16 @@
                     'f2': { id: 'f2', description: 'Refreshments for Meetup', category: 'Food & Drinks', date: '2026-06-03', type: 'expense', amount: 850 }
                 },
                 announcements: {
-                    'a2': { id: 'a2', title: 'VISIONS BY CODE', date: '2026-09-10', timestamp: 1725926400000, author: 'Nexora Team', content: 'An epic AI Image Generation Competition! 🎨🤖 We’re bringing together technology and creativity, where participants will compete live to engineer the most stunning visual prompts. We’ll need everyone’s support to make this a massive success — from event coordination and tech setups to promotion! Let’s bring our best energy and pull off a smooth, memorable event.' }
+                    'a2': { id: 'a2', title: 'VISIONS BY CODE', date: '2026-09-10', timestamp: 1725926400000, author: 'Astra Team', content: 'An epic AI Image Generation Competition! 🎨🤖 We’re bringing together technology and creativity, where participants will compete live to engineer the most stunning visual prompts. We’ll need everyone’s support to make this a massive success — from event coordination and tech setups to promotion! Let’s bring our best energy and pull off a smooth, memorable event.' }
                 },
                 tasks: {
                     't1': { id: 't1', title: 'Book Auditorium for orientation', assignee: 'Sarah Jenkins', dueDate: '2026-06-12', status: 'completed' },
                     't2': { id: 't2', title: 'Prepare sponsorship deck', assignee: 'Alex Johnson', dueDate: '2026-06-18', status: 'inprogress' },
-                    't3': { id: 't3', title: 'Design Nexora banner and t-shirts', assignee: 'Marcus Chen', dueDate: '2026-06-25', status: 'todo' }
+                    't3': { id: 't3', title: 'Design Astra banner and t-shirts', assignee: 'Marcus Chen', dueDate: '2026-06-25', status: 'todo' }
                 },
                 suggestions: {
                     's1': { id: 's1', title: 'Monthly Hack Nights', author: 'Priya S.', content: 'Host a relaxed evening code workshop once a month with pizza and open projects.', votes: 8, date: '2026-06-05', status: 'Under Review' },
-                    's2': { id: 's2', title: 'Guest Alumni Talks', author: 'Rohan M.', content: 'Invite former Nexora members now working in tech for career Q&A sessions.', votes: 12, date: '2026-06-07', status: 'Approved' }
+                    's2': { id: 's2', title: 'Guest Alumni Talks', author: 'Rohan M.', content: 'Invite former Astra members now working in tech for career Q&A sessions.', votes: 12, date: '2026-06-07', status: 'Approved' }
                 }
             };
             syncLocalData();
@@ -619,7 +636,7 @@
         }
 
         function getAuthToken() {
-            return sessionStorage.getItem('nexora_auth_token') || '';
+            return sessionStorage.getItem('astra_auth_token') || '';
         }
 
         window.saveDocument = async function(collectionName, docId, data) {
@@ -689,7 +706,33 @@
                 activeBtn.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-indigo-600', 'dark:text-indigo-400', 'font-bold');
                 activeBtn.classList.remove('text-slate-600', 'dark:text-slate-400');
             }
+
+            if (tabId === 'gallery') renderGallery();
         };
+
+        // ---- GALLERY: public, permission-free — everyone can view it ----
+        function escGallery(s) { return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+        async function renderGallery() {
+            const grid = document.getElementById('gallery-grid');
+            if (!grid || grid.dataset.loaded === 'true') return;
+            try {
+                const resp = await fetch('/api/gallery');
+                const data = await resp.json();
+                const images = data.images || [];
+                if (!images.length) {
+                    grid.innerHTML = `<div class="col-span-full text-center py-10 text-sm text-slate-400">No photos yet. Once the Photography team uploads some, they'll show up here.</div>`;
+                    return;
+                }
+                grid.innerHTML = images.map(img => `
+                    <a href="${img.url}" target="_blank" rel="noopener" class="group relative block aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
+                        <img src="${img.url}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        ${img.context && img.context.caption ? `<span class="absolute bottom-0 inset-x-0 bg-slate-950/60 text-white text-[10px] px-2 py-1 truncate">${escGallery(img.context.caption)}</span>` : ''}
+                    </a>`).join('');
+                grid.dataset.loaded = 'true';
+            } catch (e) {
+                grid.innerHTML = `<div class="col-span-full text-center py-10 text-sm text-rose-500">Could not load the gallery.</div>`;
+            }
+        }
 
         window.toggleDarkMode = function() {
             const html = document.documentElement;
@@ -740,20 +783,20 @@
 
         // ---- TEAM & ROLES: role-aware cards driven by roles-data.js ----
         function currentMemberForRoles() {
-            try { return JSON.parse(sessionStorage.getItem('nexora_logged_member') || 'null'); }
+            try { return JSON.parse(sessionStorage.getItem('astra_logged_member') || 'null'); }
             catch (e) { return null; }
         }
 
         function renderTeamRoles() {
             const grid = document.getElementById('team-roles-grid');
-            if (!grid || !window.NEXORA_ROLES) return;
+            if (!grid || !window.ASTRA_ROLES) return;
 
             const member = currentMemberForRoles();
             const myRole = member ? window.normalizeRole(member.role) : null;
             const isSuper = myRole && window.hasPermission(myRole, '*');
 
-            grid.innerHTML = window.NEXORA_ROLES.map(role => {
-                const accent = window.NEXORA_ACCENTS[role.accent] || window.NEXORA_ACCENTS.indigo;
+            grid.innerHTML = window.ASTRA_ROLES.map(role => {
+                const accent = window.ASTRA_ACCENTS[role.accent] || window.ASTRA_ACCENTS.indigo;
                 const iAmThisRole = myRole === role.id;
                 const authorized = isSuper || iAmThisRole || (myRole && window.hasPermission(myRole, role.permission));
 
@@ -800,7 +843,7 @@
         }
 
         window.openRoleInfo = function(roleId) {
-            const role = window.NEXORA_ROLES.find(r => r.id === roleId);
+            const role = window.ASTRA_ROLES.find(r => r.id === roleId);
             if (!role) return;
             openModal(role.name, `
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">${role.group}</p>
@@ -1120,7 +1163,7 @@
             const compEl = document.getElementById('tasks-completed');
 
             let tasks = Object.values(window.clubData.tasks || {});
-            const currentMember = JSON.parse(sessionStorage.getItem('nexora_logged_member') || 'null');
+            const currentMember = JSON.parse(sessionStorage.getItem('astra_logged_member') || 'null');
 
             if (currentMember && currentMember.name) {
                 tasks = tasks.filter(t => String(t.assignee || '').trim().toLowerCase() === currentMember.name.trim().toLowerCase());
@@ -1140,7 +1183,7 @@
         }
 
         function taskCardHTML(t) {
-            const currentMember = JSON.parse(sessionStorage.getItem('nexora_logged_member') || 'null');
+            const currentMember = JSON.parse(sessionStorage.getItem('astra_logged_member') || 'null');
             const canManage = currentMember && currentMember.role === 'manager';
             return `
                 <div class="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2">
@@ -1322,7 +1365,7 @@
         // --- STAFF LOGIN ---
         // Verification 1: Firebase Auth confirms the email/password is real.
         // Verification 2: /api/session checks the Realtime Database for a
-        // role assigned to that account. See nexora-auth.js for both steps.
+        // role assigned to that account. See astra-auth.js for both steps.
         window.memberLogin = async function(event) {
             event.preventDefault();
             const email = document.getElementById('login-name').value.trim();
@@ -1331,7 +1374,7 @@
             error.classList.add('hidden');
 
             try {
-                await NexoraAuth.login(email, password);
+                await AstraAuth.login(email, password);
                 closeLoginModal();
                 showMemberApp();
             } catch (err) {
@@ -1342,7 +1385,7 @@
         };
 
         window.memberLogout = async function() {
-            await NexoraAuth.logout();
+            await AstraAuth.logout();
             location.reload();
         };
 
@@ -1357,7 +1400,7 @@
         };
 
         function showMemberApp() {
-            const member = JSON.parse(sessionStorage.getItem('nexora_logged_member') || 'null');
+            const member = JSON.parse(sessionStorage.getItem('astra_logged_member') || 'null');
             const nameEl = document.getElementById('logged-member-name');
             if (nameEl && member) nameEl.textContent = `Hii ${member.name}`;
 
@@ -1389,10 +1432,10 @@
 <script>
 (function(){
   function currentUser(){
-    try { return JSON.parse(sessionStorage.getItem('nexora_logged_member') || 'null'); }
+    try { return JSON.parse(sessionStorage.getItem('astra_logged_member') || 'null'); }
     catch(e){ return null; }
   }
-  window.nexoraCanEdit = function(){
+  window.astraCanEdit = function(){
     const u = currentUser();
     if (!u) return false;
     // Legacy manager-*.html pages are still president/VP only until they are
@@ -1402,8 +1445,8 @@
   };
   function applyRoleAccess(){
     const u = currentUser();
-    const canEdit = window.nexoraCanEdit();
-    document.documentElement.dataset.nexoraRole = u ? (u.role || 'member') : 'guest';
+    const canEdit = window.astraCanEdit();
+    document.documentElement.dataset.astraRole = u ? (u.role || 'member') : 'guest';
 
     document.querySelectorAll('a[href$="-manager.html"], a[href*="manager.html"]').forEach(el=>{
       if(!canEdit) el.style.display='none';

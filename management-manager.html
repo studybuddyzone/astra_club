@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexora Management Center</title>
+<title>Astra Management Center</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -14,7 +14,7 @@
     <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
     <div class="text-center mb-7">
       <div class="mx-auto mb-4 bg-indigo-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"><i class="fa-solid fa-shield-halved"></i></div>
-      <h1 class="text-2xl font-bold">Nexora Management Center</h1>
+      <h1 class="text-2xl font-bold">Astra Management Center</h1>
       <p class="text-sm text-slate-500 mt-1">Log in only if you're an office bearer who needs to make edits.</p>
     </div>
     <form onsubmit="login(event)" class="space-y-4">
@@ -28,7 +28,7 @@
 
 <div id="app" class="">
 <header class="bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-20">
-  <div><h1 class="font-bold text-xl">Nexora Management Center</h1><p id="role" class="text-xs text-slate-500">Public view — log in as an office bearer to make edits.</p></div>
+  <div><h1 class="font-bold text-xl">Astra Management Center</h1><p id="role" class="text-xs text-slate-500">Public view — log in as an office bearer to make edits.</p></div>
   <div class="flex gap-2">
     <a href="index.html" class="px-4 py-2 bg-slate-100 rounded-xl text-sm font-semibold">Main Page</a>
     <button id="mgmt-login-btn" onclick="openLoginModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold">Staff Login</button>
@@ -58,7 +58,7 @@
 </div>
 
 <script>
-const keys={events:'nexora_events',announcements:'nexora_announcements',finances:'nexora_finances',tasks:'nexora_tasks',members:'nexora_members'};
+const keys={events:'astra_events',announcements:'astra_announcements',finances:'astra_finances',tasks:'astra_tasks',members:'astra_members'};
 const defaultMembers=[
   {
     id:'president-1',
@@ -98,10 +98,10 @@ function login(e){
  if(!u){
    document.getElementById('err').textContent='Invalid name or password.';document.getElementById('err').classList.remove('hidden');return;
  }
- sessionStorage.setItem('nexora_management_user',JSON.stringify(u));closeLoginModal();show();
+ sessionStorage.setItem('astra_management_user',JSON.stringify(u));closeLoginModal();show();
 }
 function show(){
- let u;try{u=JSON.parse(sessionStorage.getItem('nexora_management_user')||'null')}catch(e){}
+ let u;try{u=JSON.parse(sessionStorage.getItem('astra_management_user')||'null')}catch(e){}
  const loginBtn=document.getElementById('mgmt-login-btn'), logoutBtn=document.getElementById('mgmt-logout-btn');
  if(u){
    document.getElementById('role').textContent=`Logged in: ${u.name} — ${u.role}`;
@@ -116,7 +116,7 @@ function show(){
 }
 function openLoginModal(){document.getElementById('login').classList.remove('hidden')}
 function closeLoginModal(){document.getElementById('login').classList.add('hidden');document.getElementById('err').classList.add('hidden')}
-function logout(){sessionStorage.removeItem('nexora_management_user');location.reload()}
+function logout(){sessionStorage.removeItem('astra_management_user');location.reload()}
 function render(){
  document.getElementById('members').innerHTML=users().map(u=>`<div class="border rounded-xl p-4"><div class="flex justify-between"><div><b>${esc(u.name)}</b><div class="text-xs text-slate-500 mt-1">${esc(u.role||'member')}</div></div><div><button onclick="memberForm('${u.id}')" class="text-indigo-600 mr-3"><i class="fa-solid fa-pen"></i></button><button onclick="delMember('${u.id}')" class="text-rose-600"><i class="fa-solid fa-trash"></i></button></div></div></div>`).join('');
  const sections=['events','announcements','finances','tasks'];
@@ -155,7 +155,7 @@ function openForm(k,id){
  document.getElementById('mbody').innerHTML=`<form onsubmit="saveGeneric(event,'${k}','${id||''}')" class="space-y-3">${fields}<button class="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold">Save</button></form>`;
  document.getElementById('modal').classList.remove('hidden')
 }
-function saveGeneric(e,k,id){e.preventDefault();let a=get(k),o={id:id||k.slice(0,-1)+'_'+Date.now()};if(k==='events')Object.assign(o,{title:f1.value,date:f2.value,time:f3.value,location:f4.value});else if(k==='announcements')Object.assign(o,{title:f1.value,date:f2.value,content:f3.value,author:'Nexora Management'});else Object.assign(o,{type:f1.value,description:f2.value,amount:Number(f3.value),date:f4.value});let i=a.findIndex(x=>x.id===o.id);if(i>=0)a[i]=o;else a.push(o);set(k,a);closeModal();render()}
+function saveGeneric(e,k,id){e.preventDefault();let a=get(k),o={id:id||k.slice(0,-1)+'_'+Date.now()};if(k==='events')Object.assign(o,{title:f1.value,date:f2.value,time:f3.value,location:f4.value});else if(k==='announcements')Object.assign(o,{title:f1.value,date:f2.value,content:f3.value,author:'Astra Management'});else Object.assign(o,{type:f1.value,description:f2.value,amount:Number(f3.value),date:f4.value});let i=a.findIndex(x=>x.id===o.id);if(i>=0)a[i]=o;else a.push(o);set(k,a);closeModal();render()}
 function edit(k,id){if(k==='tasks')openTaskForm(id);else openForm(k,id)}
 function del(k,id){if(confirm('Delete this record?')){set(k,get(k).filter(x=>x.id!==id));render()}}
 function closeModal(){document.getElementById('modal').classList.add('hidden')}

@@ -1,11 +1,11 @@
-# Nexora Backend Setup (Vercel + Firebase Admin SDK)
+# Astra Backend Setup (Vercel + Firebase Admin SDK)
 
 ## 1. Where these files go
 Copy this into your existing GitHub repo (the one already connected to Vercel), keeping the same folder names:
 
 ```
 your-repo/
-├── nexora_updated.html      <- already in your repo, replace with the updated version
+├── astra_updated.html      <- already in your repo, replace with the updated version
 ├── api/
 │   ├── login.js
 │   └── data.js
@@ -43,16 +43,16 @@ Vercel will auto-deploy. Your endpoints will be live at:
 - `https://your-site.vercel.app/api/login`
 - `https://your-site.vercel.app/api/data?collection=events` (and finances/announcements/tasks/suggestions)
 
-## 5. What changed in nexora_updated.html
+## 5. What changed in astra_updated.html
 - Removed all direct Firebase client SDK calls (no more `getFirestore`, `setDoc`, `onSnapshot` in the browser).
 - The page now calls `/api/data` to read/write data, and `/api/login` to verify officer logins.
 - Data refreshes automatically every 10 seconds, plus whenever the tab regains focus.
 
 ## 6. First login after this change
-Until you add real members to a Firestore collection called `nexora_members`,
+Until you add real members to a Firestore collection called `astra_members`,
 login falls back to the one hardcoded account (`Anurag` / `Anurag7028@2026`,
 role `president`) defined in `api/login.js`. Add real member documents to
-`nexora_members` in Firestore (each with `name`, `password`, `role`) and the
+`astra_members` in Firestore (each with `name`, `password`, `role`) and the
 fallback will stop being used automatically.
 
 ## 7. Not yet covered (next step)
@@ -63,10 +63,29 @@ is ready, these should be updated the same way — I can do that next.
 
 ⚠️ **Known inconsistency:** `management-manager.html` has its own separate,
 local-only login (hardcoded `Govind` / `Anurag` accounts in that file) that
-is completely disconnected from `/api/login.js` and `nexora_members` in
+is completely disconnected from `/api/login.js` and `astra_members` in
 Firestore. Until this page is migrated, a member added in Firestore will
 NOT be able to log into `management-manager.html`, and vice versa. Treat
 `/api/login.js` + Firestore as the source of truth going forward.
+
+## 8. Role-Based Access Control (RBAC) — added
+- `lib/permissions.js` — the single, server-enforced role → permission map.
+  Every write in `api/data.js` now checks this instead of a hardcoded
+  president/VP-only list.
+- `roles-data.js` — the client-side mirror (role metadata: icon, accent
+  color, responsibilities, tags, and which workspace each role opens). Both
+  `index.html` and every `*-workspace.html` page load this file. Keep it in
+  sync with `lib/permissions.js` when you add/change roles.
+- `accountant-workspace.html` — the first live role workspace ("Finance
+  Center"): dashboard, transactions (search/filter/approve/delete), add
+  income/expense forms, a budgets view, and CSV export/print reports. It
+  reads/writes the same `finances` Firestore collection as the main
+  dashboard, plus a new `budgets` collection.
+- The **Team & Roles** tab on the main dashboard is generated from
+  `roles-data.js` instead of static "Details coming soon." cards. Each card
+  shows real responsibilities and a permission-aware button.
+- `api/data.js` accepts `budgets`, `inventory`, and `records` as
+  collections (see §10).
 
 ## 9. Real Firebase Auth + Realtime Database login — added
 
@@ -116,7 +135,7 @@ first one by hand, once:
   "members": {
     "PASTE_THE_UID_HERE": {
       "name": "Your Name",
-      "email": "you@nexora.club",
+      "email": "you@astra.club",
       "role": "president",
       "department": null,
       "status": "active",
@@ -161,26 +180,109 @@ together, atomically, on the server.
 `api/login.js` (the old name+password/Firestore check) is no longer used
 by any page but is left in place rather than deleted, in case you have
 external scripts still calling it.
-- `lib/permissions.js` — the single, server-enforced role → permission map.
-  Every write in `api/data.js` now checks this instead of a hardcoded
-  president/VP-only list.
-- `roles-data.js` — the client-side mirror (role metadata: icon, accent
-  color, responsibilities, tags, and which workspace each role opens). Both
-  `index.html` and every `*-workspace.html` page load this file. Keep it in
-  sync with `lib/permissions.js` when you add/change roles.
-- `accountant-workspace.html` — the first live role workspace ("Finance
-  Center"): dashboard, transactions (search/filter/approve/delete), add
-  income/expense forms, a budgets view, and CSV export/print reports. It
-  reads/writes the same `finances` Firestore collection as the main
-  dashboard, plus a new `budgets` collection (read-only here; still needs a
-  Budget Manager UI to populate it — `budget-manager.html` is currently an
-  empty file).
-- The **Team & Roles** tab on the main dashboard is now generated from
-  `roles-data.js` instead of static "Details coming soon." cards. Each card
-  shows real responsibilities and a permission-aware button: "Open
-  Workspace" (Accountant), "Full Dashboard Access" (President/VP, via the
-  existing dashboard), "Access Restricted" (logged in, wrong role), or
-  "Role Information" (workspace not built yet — every other role, next in
-  the roadmap).
-- `api/data.js` now also accepts `budgets` and `inventory` as collections,
-  ready for the Budget/Store Manager phases.
+
+## 10. Rebranded to "Astra" — and all remaining roles activated
+
+Every visible "Nexora" was renamed to **"Astra"** — page titles, headers,
+comments, session-storage keys (`astra_auth_token`, `astra_logged_member`,
+`astra_theme`), and the shared JS globals (`window.ASTRA_ROLES`,
+`window.ASTRA_PERMISSIONS`, `window.AstraAuth`). The login helper file is
+now `astra-auth.js` (renamed from `nexora-auth.js`).
+
+⚠️ **One consequence you should know about:** the Firestore path used by
+`api/data.js` changed from `artifacts/nexora-club-app/...` to
+`artifacts/astra-club-app/...`. If you had already saved real events,
+finances, tasks, etc. under the old path, that data still exists in
+Firestore but the site will no longer read from it — it's reading a fresh,
+empty path now under the new name. If that matters to you, tell me and I
+can either point the code back at the old path name or write a one-time
+migration script to copy the documents across.
+
+### Every role now has a working workspace
+Previously only Accountant and Joint Secretary had a real workspace behind
+their "Team & Roles" card. **Every remaining role is now activated** —
+this is the workflow layer you asked for; deeper, bespoke features per
+role (Kanban boards, content calendars, incident escalation, etc.) are
+still on the roadmap, but each role can now genuinely log in and use
+something real:
+
+- **Photography** → `photography-workspace.html` — the new Cloudinary
+  gallery (see §11 below).
+- **Every other role** (Deputy President, Vice Deputy President, Secretary,
+  Event Head, Event Manager, Store Manager, Marketing Head, Social Media
+  Head, Technical Head, Cultural Head, Discipline Head, Student
+  Coordinator, both Representatives, Strategy & Planning Head, Creativity
+  Head) → a shared **`role-workspace.html?role=<id>`** template, which
+  gives each of them:
+  - **Overview** — their responsibilities + live task/record counts
+  - **Tasks** — reads/writes the same shared `tasks` collection the
+    original Task Manager uses, filtered to `assignedRole` matching that
+    role
+  - **Records** — a new generic `records` collection for notes, minutes,
+    incident reports, campaign updates, whatever that role needs to log.
+    Each record is tagged with the creator's role; only President/VP can
+    see across every role's records or delete someone else's entry.
+  - **Inventory** (Store Manager only) — a simple item/quantity/min-stock
+    list against the `inventory` collection.
+
+  Nobody needs a new account type for this — the same login, the same
+  `/members/{uid}` role, the same permission matrix in
+  `lib/permissions.js` already decide what each person can open.
+
+## 11. Photo Gallery — Cloudinary — added
+
+Uploading and the public gallery are both live; you just need to drop in
+your Cloudinary keys.
+
+### Setup
+1. Cloudinary Dashboard → Settings → **API Keys** → copy:
+   - Cloud name
+   - API Key
+   - API Secret
+2. Add three environment variables in Vercel:
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET` (never put this in any client-side file)
+
+That's it — no Cloudinary upload preset needs configuring, because uploads
+are **signed** server-side (see `api/cloudinary-sign.js`), not unsigned.
+
+### How it works
+- **Photography workspace** (`photography-workspace.html`, gated by the
+  `media.manage` permission): pick one or more photos, optional
+  event/caption, hit upload. The browser first asks
+  `POST /api/cloudinary-sign` for a one-time signature (your API secret
+  never leaves the server), then uploads the file straight to Cloudinary
+  using that signature. Every photo lands in the `astra-gallery` folder in
+  your Cloudinary account.
+- **Public gallery**: both the main site's new **Gallery** tab and the
+  Photography workspace call `GET /api/gallery`, which lists everything in
+  `astra-gallery` via Cloudinary's Admin API (server-side only — visitors
+  never see your API secret). No login needed to *view* the gallery, only
+  to *upload* to it.
+- If the three env vars aren't set yet, the Gallery tab shows an empty
+  state instead of erroring, and the workspace shows a banner telling you
+  what's missing.
+
+## 12. Team members under Heads (max 5 each) — added
+
+When creating an ID from the Joint Secretary's **Create ID** panel, there
+are two new fields:
+- **Contact Number** — stored on the member record.
+- **Reports To (Head)** — pick which Head/role this person is a team
+  member under (e.g. Event Head). Leave it as "None" for office-bearers
+  who aren't part of anyone's team. The dropdown shows a live `x/5` count
+  per head and disables any head that's already full — **the backend also
+  enforces the cap of 5**, so it can't be bypassed by calling the API
+  directly.
+
+Once assigned, that person automatically shows up — name, contact number,
+email — in a new **Team** tab inside that Head's own `role-workspace.html`.
+A Head only ever sees their own team this way; only Secretary, Joint
+Secretary, and President/VP can see the full member list across every
+role (via `members.view` / `*`).
+
+> Performance note: team lookups query `/members` filtered by `reportsTo`.
+> For a large member list, add an index in Realtime Database → Rules:
+> `{ "rules": { "members": { ".indexOn": ["reportsTo"] } } }` — not
+> required to work, just keeps queries fast as the roster grows.
