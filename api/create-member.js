@@ -18,21 +18,29 @@ function getToken(req) {
 
 module.exports = async (req, res) => {
   if (req.method === 'GET') {
-    // List members — used by the workspace to show existing IDs.
+    // List members — used by Joint Secretary/Secretary/leadership to see
+    // everyone, and by every Head's role-workspace "Team" tab to see just
+    // the members reporting to them.
     if (!rtdb) { res.status(500).json({ error: 'Realtime Database is not configured.' }); return; }
     const caller = verifyToken(getToken(req));
-    if (!caller || !hasPermission(caller.role, 'members.view')) {
-      res.status(403).json({ error: 'You are not authorized to view the member list.' });
-      return;
-    }
+    if (!caller) { res.status(403).json({ error: 'Please log in.' }); return; }
     try {
       const snap = await rtdb.ref('members').once('value');
       const members = snap.val() || {};
-      // Never send password data — there isn't any here (Firebase Auth holds
-      // passwords, not the Realtime Database), but strip anything sensitive
-      // defensively in case older data was written differently.
       Object.values(members).forEach(m => { delete m.password; });
-      res.status(200).json(members);
+
+      // Full visibility: members.view permission (Secretary/Joint Secretary)
+      // or the wildcard (President/VP). Everyone else only sees their OWN
+      // team — the members whose reportsTo matches their own role.
+      if (hasPermission(caller.role, 'members.view') || hasPermission(caller.role, '*')) {
+        res.status(200).json(members);
+        return;
+      }
+      const myTeam = {};
+      Object.entries(members).forEach(([uid, m]) => {
+        if (normalizeRole(m.reportsTo || '') === normalizeRole(caller.role)) myTeam[uid] = m;
+      });
+      res.status(200).json(myTeam);
     } catch (err) {
       console.error('Member list error:', err);
       res.status(500).json({ error: 'Could not load members.' });
@@ -56,7 +64,7 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const { name, email, password, role, department } = req.body || {};
+  const { name, email, password, role, department, phone, reportsTo } = req.body || {};
   if (!name || !email || !password || !role) {
     res.status(400).json({ error: 'name, email, password and role are all required.' });
     return;
@@ -70,13 +78,30 @@ module.exports = async (req, res) => {
     res.status(400).json({ error: `Unknown role "${role}".` });
     return;
   }
+  const normalizedReportsTo = reportsTo ? normalizeRole(reportsTo) : null;
+  if (normalizedReportsTo && !ROLE_PERMISSIONS[normalizedReportsTo]) {
+    res.status(400).json({ error: `Unknown head/role "${reportsTo}" for "reports to".` });
+    return;
+  }
 
   try {
+    // Enforce: max 5 members under any one Head.
+    if (normalizedReportsTo) {
+      const snap = await rtdb.ref('members').orderByChild('reportsTo').equalTo(normalizedReportsTo).once('value');
+      const existing = snap.val() || {};
+      if (Object.keys(existing).length >= 5) {
+        res.status(400).json({ error: `This head already has 5 members under them. Remove one before adding another.` });
+        return;
+      }
+    }
+
     const userRecord = await auth.createUser({ email, password, displayName: name });
     await rtdb.ref(`members/${userRecord.uid}`).set({
       name,
       email,
+      phone: phone || null,
       role: normalizedRole,
+      reportsTo: normalizedReportsTo,
       department: department || null,
       status: 'active',
       createdBy: caller.name,

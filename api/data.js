@@ -6,20 +6,22 @@
 
 const { db } = require('../lib/firebaseAdmin');
 const { verifyToken } = require('../lib/authToken');
-const { hasAnyPermission } = require('../lib/permissions');
+const { hasAnyPermission, hasPermission, normalizeRole } = require('../lib/permissions');
 
 // Keeps the same Firestore location the site already used, so existing
 // cloud data (if any) is not orphaned.
-const APP_ID = 'nexora-club-app';
+const APP_ID = 'astra-club-app';
 
-const ALL_COLLECTIONS = ['events', 'finances', 'announcements', 'tasks', 'suggestions', 'budgets', 'inventory'];
+const ALL_COLLECTIONS = ['events', 'finances', 'announcements', 'tasks', 'suggestions', 'budgets', 'inventory', 'records'];
 
 // Anyone can add/upvote a suggestion; the rest need an officer login with the
 // right permission (see lib/permissions.js for the full role->permission map).
-const OFFICER_ONLY_COLLECTIONS = ['events', 'finances', 'announcements', 'tasks', 'budgets', 'inventory'];
+const OFFICER_ONLY_COLLECTIONS = ['events', 'finances', 'announcements', 'tasks', 'budgets', 'inventory', 'records'];
 
 // A write to a collection is allowed if the caller's role holds ANY one of
 // the listed permissions. president/vice-president hold '*' and always pass.
+// 'records' is handled separately below (it's shared by every role
+// workspace, so the rule is "own role's records only", not a fixed list).
 const COLLECTION_WRITE_PERMISSIONS = {
   events: ['event.create', 'event.edit', 'event.edit-operations'],
   finances: ['finance.create', 'finance.edit', 'finance.approve'],
@@ -42,10 +44,23 @@ function getToken(req) {
   return (req.body && req.body.token) || null;
 }
 
-function canEdit(req, collectionName) {
+// 'records' is the generic per-role notes/log collection used by every
+// role-workspace.html page (§ "activate remaining roles"). Anyone with a
+// real officer role can log a record, but only tagged under their OWN
+// role — unless they hold the wildcard (President/VP), who can write (and
+// are the only ones who can delete) any role's records.
+function canEditRecords(payload, req, isDelete) {
+  if (hasPermission(payload.role, '*')) return true;
+  if (isDelete) return false; // only leadership can delete another's log entry
+  const targetRole = req.body && req.body.data && req.body.data.role;
+  return !!targetRole && normalizeRole(targetRole) === normalizeRole(payload.role);
+}
+
+function canEdit(req, collectionName, isDelete) {
   if (!OFFICER_ONLY_COLLECTIONS.includes(collectionName)) return true; // public write
   const payload = verifyToken(getToken(req));
   if (!payload) return false;
+  if (collectionName === 'records') return canEditRecords(payload, req, isDelete);
   const required = COLLECTION_WRITE_PERMISSIONS[collectionName] || [];
   return hasAnyPermission(payload.role, required);
 }
@@ -67,7 +82,7 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'POST') {
-      if (!canEdit(req, collectionName)) {
+      if (!canEdit(req, collectionName, false)) {
         res.status(403).json({ error: 'You are not authorized to edit this section.' });
         return;
       }
@@ -82,7 +97,7 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'DELETE') {
-      if (!canEdit(req, collectionName)) {
+      if (!canEdit(req, collectionName, true)) {
         res.status(403).json({ error: 'You are not authorized to delete this item.' });
         return;
       }

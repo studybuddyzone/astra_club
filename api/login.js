@@ -1,14 +1,14 @@
 // api/login.js  ->  POST /api/login
 // SUPERSEDED — kept only so nothing 404s if an old bookmark/script still
 // calls it. All pages now log in through Firebase Auth (email + password)
-// + /api/session.js instead (see nexora-auth.js). That flow gives you real
+// + /api/session.js instead (see astra-auth.js). That flow gives you real
 // double verification: Firebase Auth confirms the credentials, then
 // /api/session checks the Realtime Database for a role. This file's
-// Firestore "nexora_members" name+password check has neither of those
+// Firestore "astra_members" name+password check has neither of those
 // properties, so don't point new UI at it.
 //
 // Verifies an office bearer's name + password against Firestore (collection
-// "nexora_members"), and returns a signed token the frontend must send with
+// "astra_members"), and returns a signed token the frontend must send with
 // any future add/edit/delete request. Passwords never leave the backend and
 // are never visible in the website's front-end code.
 
@@ -17,7 +17,7 @@ const { issueToken } = require('../lib/authToken');
 const { normalizeRole, getPermissions } = require('../lib/permissions');
 
 // Used only the very first time, before you've added real members in
-// Firestore. Once you add documents to the "nexora_members" collection,
+// Firestore. Once you add documents to the "astra_members" collection,
 // this fallback is ignored. Change/remove this once real members are set up.
 const FALLBACK_MEMBERS = [
   { id: 'member-anurag', name: 'Anurag', password: 'Anurag7028@2026', role: 'president' }
@@ -37,7 +37,7 @@ module.exports = async (req, res) => {
     }
 
     let members = [];
-    const snapshot = await db.collection('nexora_members').get();
+    const snapshot = await db.collection('astra_members').get();
     if (!snapshot.empty) {
       snapshot.forEach(docSnap => members.push(docSnap.data()));
     } else {
