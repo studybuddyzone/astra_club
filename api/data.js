@@ -71,12 +71,28 @@ function canEditReports(payload, req, isDelete) {
   return !!authorUid && authorUid === payload.uid;
 }
 
+// 'tasks' normally needs task.edit/task.assign (Heads managing their own
+// role's task list). BUT an Assistant — who deliberately holds NEITHER of
+// those permissions (see lib/permissions.js) — must still be able to move
+// a task assigned specifically TO THEM (by uid) between Todo/In Progress/
+// Completed. So: allow the normal permission check, OR allow the write if
+// the task's assignedToUid already matches the caller AND stays matching
+// the caller (an assistant can update their own task, not reassign it to
+// someone else or steal someone else's task).
+function canEditTasks(payload, req, isDelete) {
+  if (hasAnyPermission(payload.role, COLLECTION_WRITE_PERMISSIONS.tasks)) return true;
+  if (isDelete) return false;
+  const assignedToUid = req.body && req.body.data && req.body.data.assignedToUid;
+  return !!assignedToUid && assignedToUid === payload.uid;
+}
+
 function canEdit(req, collectionName, isDelete) {
   if (!OFFICER_ONLY_COLLECTIONS.includes(collectionName)) return true; // public write
   const payload = verifyToken(getToken(req));
   if (!payload) return false;
   if (collectionName === 'records') return canEditRecords(payload, req, isDelete);
   if (collectionName === 'reports') return canEditReports(payload, req, isDelete);
+  if (collectionName === 'tasks') return canEditTasks(payload, req, isDelete);
   const required = COLLECTION_WRITE_PERMISSIONS[collectionName] || [];
   return hasAnyPermission(payload.role, required);
 }

@@ -101,6 +101,8 @@ module.exports = async (req, res) => {
         email,
         role,
         department: member.department || null,
+        phone: member.phone || null,
+        reportsTo: member.reportsTo || null,
         permissions: getPermissions(role)
       }
     });
