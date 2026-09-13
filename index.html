@@ -244,6 +244,9 @@
                 <button onclick="switchTab('gallery')" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition" data-tab="gallery">
                     <i class="fa-solid fa-camera w-5 text-center"></i> Gallery
                 </button>
+                <a href="assistant-workspace.html" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition">
+                    <i class="fa-solid fa-user-check w-5 text-center"></i> Assistant Dashboard
+                </a>
             </nav>
 
             <div class="pt-6 mt-6 border-t border-slate-200 dark:border-slate-800">
@@ -1374,8 +1377,15 @@
             error.classList.add('hidden');
 
             try {
-                await AstraAuth.login(email, password);
+                const member = await AstraAuth.login(email, password);
                 closeLoginModal();
+                // Assistants have no card in Team & Roles (they aren't one of
+                // the 20 hierarchy roles) — send them straight to their own
+                // dashboard so they're never stuck with nowhere to go.
+                if (window.normalizeRole(member.role) === 'assistant') {
+                    window.location.href = 'assistant-workspace.html';
+                    return;
+                }
                 showMemberApp();
             } catch (err) {
                 console.error('Login failed:', err);

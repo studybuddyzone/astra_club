@@ -181,26 +181,32 @@ async function loadTasks() {
   renderTasks();
 }
 
+function isPastDue(t) { return t.dueDate && t.dueDate < new Date().toISOString().slice(0, 10) && t.status !== 'Completed'; }
+
 function renderStats() {
   const tasks = Object.values(taskData);
   document.getElementById('stat-open').textContent = tasks.filter(t => t.status !== 'Completed').length;
   document.getElementById('stat-done').textContent = tasks.filter(t => t.status === 'Completed').length;
-  document.getElementById('stat-overdue').textContent = tasks.filter(t => t.status === 'Overdue').length;
+  document.getElementById('stat-overdue').textContent = tasks.filter(t => t.status === 'Overdue' || isPastDue(t)).length;
 }
 
 function renderTasks() {
   const list = document.getElementById('task-list');
-  const tasks = Object.entries(taskData);
+  // Nearest deadline first; tasks with no due date sink to the bottom.
+  const tasks = Object.entries(taskData).sort((a, b) => (a[1].dueDate || '9999') < (b[1].dueDate || '9999') ? -1 : 1);
   if (!tasks.length) { list.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-400">No tasks assigned to you yet. Your Head will assign tasks from their own workspace.</div>`; return; }
-  list.innerHTML = tasks.map(([id, t]) => `
-    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs flex items-start justify-between gap-3">
+  list.innerHTML = tasks.map(([id, t]) => {
+    const overdue = isPastDue(t);
+    return `
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border ${overdue ? 'border-rose-300 dark:border-rose-900' : 'border-slate-200 dark:border-slate-800'} p-4 shadow-xs flex items-start justify-between gap-3">
       <div class="min-w-0">
         <p class="font-semibold text-sm text-slate-800 dark:text-slate-200">${esc(t.title)}</p>
         <p class="text-xs text-slate-400 mt-0.5">${esc(t.description || '')}</p>
-        <p class="text-[11px] text-slate-400 mt-1">${t.dueDate ? 'Due ' + esc(t.dueDate) : ''} ${t.priority ? '· ' + esc(t.priority) + ' priority' : ''}</p>
+        <p class="text-[11px] mt-1 ${overdue ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-400'}">${t.dueDate ? (overdue ? '⚠ Overdue — was due ' : 'Due ') + esc(t.dueDate) : 'No deadline set'} ${t.priority ? '· ' + esc(t.priority) + ' priority' : ''}</p>
       </div>
       <select onchange="updateStatus('${id}', this.value)" class="text-[11px] font-bold rounded-full px-2 py-1 border-0 shrink-0 ${STATUS_STYLE[t.status] || STATUS_STYLE.Todo}">${['Todo','In Progress','Completed','Overdue'].map(s => `<option value="${s}" ${t.status===s?'selected':''}>${s}</option>`).join('')}</select>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 window.updateStatus = async function(id, status) {
