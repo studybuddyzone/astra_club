@@ -330,3 +330,39 @@ workspace), and Joint Secretary has a full **Central Report Center**.
 These are the next logical additions on top of what's built — the
 end-to-end flow (submit → central inbox → review → approve/reject →
 printable record) is fully working today.
+
+## 14. Assistant role — fixed the "team member" design flaw
+
+Earlier, team members created under a Head used a generic `member` role
+plus `reportsTo`. You correctly flagged that this was the wrong model —
+what was actually needed was a role that can **never** open a Head's own
+workspace, no matter which Head they're placed under, plus a dashboard of
+their own.
+
+- **New role: `assistant`** — holds **zero permissions** in
+  `lib/permissions.js` (only the universal `report.create` from
+  `BASE_PERMISSIONS`). Because `role-workspace.html`'s access check is
+  `your own role === this role, OR you hold the specific permission this
+  role needs`, an assistant can never pass either check for any Head's
+  workspace — there is no permission left to accidentally share.
+- **"Create ID" vs "Create Member ID" vs "Create Assistant ID"**: Joint
+  Secretary's workspace now has "Create ID" (any of the 20 office-bearer
+  roles, full dropdown) and "Create Assistant ID" (role fixed to
+  `assistant`, no dropdown at all — impossible to mis-pick a Head's role
+  by accident). Same 5-per-head cap as before, enforced server-side.
+- **New `assistant-workspace.html`** — its own dedicated dashboard
+  (parallel to Joint Secretary's), gated to `role === 'assistant'`. Shows
+  only tasks assigned **specifically to them** (by uid, not by role), with
+  status updates, plus their own Send Report button. Header shows which
+  Head they report to (`reportsTo`, now returned by `/api/session` at
+  login).
+- **Per-person task assignment**: a Head's "Add Task" modal in
+  `role-workspace.html` now has an "Assign To" dropdown listing their own
+  team (populated from the same Team tab data). Leave it blank for a
+  role-wide task (visible only in the Head's own Tasks tab, as before);
+  pick a specific assistant and the task also shows up in that assistant's
+  own dashboard.
+- **Backend**: `api/data.js`'s `tasks` collection now allows a write if
+  either the normal `task.edit`/`task.assign` permission is held (Heads),
+  **or** the task's `assignedToUid` matches the caller's own uid (an
+  assistant updating their own assigned task's status — nothing else).

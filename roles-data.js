@@ -26,7 +26,8 @@ window.ASTRA_PERMISSIONS = {
   'boys-representative': ['feedback.manage'],
   'strategy-planning-head': ['strategy.manage','report.view','event.view'],
   'creativity-head': ['creative.manage','task.view'],
-  'member': ['suggestion.create']
+  'member': ['suggestion.create'],
+  'assistant': []
 };
 
 window.normalizeRole = function normalizeRole(role) {
