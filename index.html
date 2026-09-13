@@ -42,6 +42,20 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
         .dark ::-webkit-scrollbar-thumb { background: #475569; }
 
+        /* Leadership/Team auto-scroll strip */
+        .marquee-track {
+            width: max-content;
+            animation: marquee-scroll 30s linear infinite;
+        }
+        .marquee-track:hover { animation-play-state: paused; }
+        @keyframes marquee-scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+        .leadership-card { width: 96px; text-align: center; flex-shrink: 0; }
+        .leadership-card img { width: 72px; height: 72px; border-radius: 9999px; object-fit: cover; margin: 0 auto; border: 2px solid #e2e8f0; }
+        .dark .leadership-card img { border-color: #334155; }
+
         /* Splash Intro Overlay Styles */
         .intro-overlay {
             position: fixed;
@@ -201,6 +215,7 @@
 
         <!-- Right: Login/Logout & Theme Toggle -->
         <div class="flex items-center gap-3">
+            <button id="mobile-menu-btn" onclick="toggleMobileSidebar()" class="md:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200"><i class="fa-solid fa-bars"></i></button>
             <button id="staff-login-btn" onclick="openLoginModal()" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-400 transition flex items-center gap-1.5">
                 <i class="fa-solid fa-right-to-bracket"></i>
                 <span>Staff Login</span>
@@ -217,7 +232,7 @@
 
     <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
         <!-- Sidebar Navigation -->
-        <aside class="w-full md:w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-4 flex flex-col justify-between shrink-0">
+        <aside id="main-sidebar" class="hidden md:flex w-full md:w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-4 flex-col justify-between shrink-0">
             <nav class="space-y-1">
                 <p class="px-3 text-[10px] font-bold tracking-wider text-slate-400 uppercase mb-2">Main Menu</p>
                 <button onclick="switchTab('dashboard')" class="tab-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition active" data-tab="dashboard">
@@ -274,6 +289,11 @@
                             <i class="fa-solid fa-lightbulb"></i> My Suggestions
                         </button>
                     </div>
+                </div>
+
+                <!-- Leadership/Team auto-scrolling strip (fed by Joint Secretary's "Post" panel) -->
+                <div id="leadership-strip-wrap" class="hidden bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden py-5">
+                    <div class="marquee-track flex gap-6 px-6" id="leadership-strip"></div>
                 </div>
 
                 <!-- Budget Overview (visible to everyone) -->
@@ -608,6 +628,28 @@
         // Initial load, then poll periodically so everyone sees updates without refreshing
         fetchAllCollections();
         setInterval(fetchAllCollections, 10000);
+        loadLeadershipStrip();
+
+        // ---- Leadership/Team auto-scroll strip (public, fed by Joint Secretary's Post panel) ----
+        async function loadLeadershipStrip() {
+            const wrap = document.getElementById('leadership-strip-wrap');
+            const track = document.getElementById('leadership-strip');
+            try {
+                const resp = await fetch('/api/posts');
+                const data = await resp.json();
+                const posts = data.posts || [];
+                if (!posts.length) { wrap.classList.add('hidden'); return; }
+                const cardHtml = posts.map(p => `
+                    <div class="leadership-card">
+                        <img src="${p.url}" alt="${escGallery(p.name)}">
+                        <p class="text-xs font-bold text-slate-800 dark:text-slate-200 mt-2 truncate">${escGallery(p.name)}</p>
+                        <p class="text-[10px] text-slate-400 truncate">${escGallery(p.post)}</p>
+                    </div>`).join('');
+                // Duplicate the list once so the CSS translateX(-50%) loop is seamless.
+                track.innerHTML = cardHtml + cardHtml;
+                wrap.classList.remove('hidden');
+            } catch (e) { wrap.classList.add('hidden'); }
+        }
 
         function loadDemoData() {
             window.clubData = {
@@ -711,6 +753,13 @@
             }
 
             if (tabId === 'gallery') renderGallery();
+
+            // On phones, close the sidebar drawer after picking a tab so the
+            // person lands straight on the content instead of scrolling past nav.
+            if (window.innerWidth < 768) {
+                const sidebar = document.getElementById('main-sidebar');
+                if (sidebar) { sidebar.classList.add('hidden'); sidebar.classList.remove('flex'); }
+            }
         };
 
         // ---- GALLERY: public, permission-free — everyone can view it ----
@@ -736,6 +785,12 @@
                 grid.innerHTML = `<div class="col-span-full text-center py-10 text-sm text-rose-500">Could not load the gallery.</div>`;
             }
         }
+
+        window.toggleMobileSidebar = function() {
+            const el = document.getElementById('main-sidebar');
+            el.classList.toggle('hidden');
+            el.classList.toggle('flex');
+        };
 
         window.toggleDarkMode = function() {
             const html = document.documentElement;

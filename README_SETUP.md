@@ -366,3 +366,37 @@ their own.
   either the normal `task.edit`/`task.assign` permission is held (Heads),
   **or** the task's `assignedToUid` matches the caller's own uid (an
   assistant updating their own assigned task's status — nothing else).
+
+## 15. Leadership "Post" strip + mobile sidebar — added
+
+### Joint Secretary's new "Post" panel
+A new **Post** tab in `joint-secretary-workspace.html` (permission:
+`post.manage`, held by Joint Secretary + the President/VP wildcard): pick
+a photo, enter Name and Post/Designation, hit Upload. This uses the same
+signed-Cloudinary-upload pattern as the Photography workspace, but into a
+separate `astra-leadership` folder (kept apart from the general
+`astra-gallery` photos) via `api/cloudinary-sign.js`'s new `purpose: 'post'`
+mode. `api/posts.js` (public, no login) lists everything in that folder
+for display.
+
+### Homepage auto-scrolling strip
+The main Dashboard tab in `index.html` now shows every "Post" as a
+circular photo + name + designation in a continuously auto-scrolling
+horizontal strip (pure CSS animation, no library) — pauses on hover, and
+is simply hidden if no posts exist yet or Cloudinary isn't configured.
+
+### Mobile sidebar
+The sidebar used to sit full-width **above** the page content on phones,
+so anyone on mobile had to scroll past the entire nav list first. It's now
+a proper collapsible drawer: a hamburger button appears next to Staff
+Login on small screens, and picking any tab automatically closes the
+drawer so you land straight on the content. Desktop/laptop layout
+(sidebar always visible alongside content) is unchanged.
+
+### Honest note on "mobile + laptop friendly"
+This pass fixed the biggest structural mobile issue (the sidebar) and the
+new leadership strip is responsive by construction. I did not do a
+pixel-by-pixel audit of every existing tab/table on every screen size —
+if you spot a specific page/element that looks broken on your phone or
+laptop, tell me which one and I'll fix that spot directly rather than
+guessing at a full re-audit.

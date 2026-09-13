@@ -10,7 +10,7 @@ window.ASTRA_PERMISSIONS = {
   'deputy-president': ['event.view','event.edit','task.view','task.edit','announcement.view','finance.view','finance.approve','team.view','report.view'],
   'vice-deputy-president': ['event.view','task.view','announcement.view','finance.view','team.view'],
   'secretary': ['announcement.view','announcement.create','announcement.edit','meeting.manage','document.manage','task.view','members.view'],
-  'joint-secretary': ['announcement.view','meeting.manage','task.view','members.view','members.create','report.view','report.review','report.approve'],
+  'joint-secretary': ['announcement.view','meeting.manage','task.view','members.view','members.create','report.view','report.review','report.approve','post.manage'],
   'accountant': ['finance.view','finance.create','finance.edit','finance.request-approval','budget.view','receipt.manage','report.create'],
   'event-head': ['event.view','event.create','event.edit','task.assign','task.view','team.view','budget.view'],
   'event-manager': ['event.view','event.edit-operations','task.view','task.edit','checklist.manage'],
