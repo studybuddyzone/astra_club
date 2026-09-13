@@ -1,7 +1,15 @@
 // api/cloudinary-sign.js  ->  POST /api/cloudinary-sign
-// Used by the Photography workspace's upload panel. The browser never sees
+// Used by both the Photography workspace's upload panel AND the Joint
+// Secretary's "Post" (leadership photo) panel. The browser never sees
 // CLOUDINARY_API_SECRET — it only receives a one-time signature + timestamp
 // that Cloudinary itself will check when the upload arrives.
+//
+//   Body: { purpose: 'gallery' | 'post', tags?, caption?, event?, name?, post? }
+//
+// 'gallery' -> requires media.manage (Photography), uploads to astra-gallery.
+// 'post'    -> requires post.manage (Joint Secretary), uploads to
+//              astra-leadership, and stores the person's name + post/title
+//              in Cloudinary's context so /api/posts can display them.
 
 const { verifyToken } = require('../lib/authToken');
 const { hasPermission } = require('../lib/permissions');
@@ -24,19 +32,36 @@ module.exports = async (req, res) => {
   }
 
   const caller = verifyToken(getToken(req));
-  if (!caller || !(hasPermission(caller.role, 'media.manage') || hasPermission(caller.role, '*'))) {
+  if (!caller) { res.status(403).json({ error: 'Please log in.' }); return; }
+
+  const purpose = (req.body && req.body.purpose) === 'post' ? 'post' : 'gallery';
+
+  if (purpose === 'post') {
+    if (!(hasPermission(caller.role, 'post.manage') || hasPermission(caller.role, '*'))) {
+      res.status(403).json({ error: 'You are not authorized to add a leadership post.' });
+      return;
+    }
+  } else if (!(hasPermission(caller.role, 'media.manage') || hasPermission(caller.role, '*'))) {
     res.status(403).json({ error: 'You are not authorized to upload to the gallery.' });
     return;
   }
 
-  const { tags, caption, event } = req.body || {};
+  const { tags, caption, event, name, post } = req.body || {};
   const timestamp = Math.round(Date.now() / 1000);
-  const paramsToSign = {
-    timestamp,
-    folder: 'astra-gallery',
-    tags: tags || 'gallery',
-    context: `caption=${caption || ''}|event=${event || ''}|uploadedBy=${caller.name}`
-  };
+
+  const paramsToSign = purpose === 'post'
+    ? {
+        timestamp,
+        folder: 'astra-leadership',
+        tags: 'leadership',
+        context: `name=${name || ''}|post=${post || ''}|addedBy=${caller.name}`
+      }
+    : {
+        timestamp,
+        folder: 'astra-gallery',
+        tags: tags || 'gallery',
+        context: `caption=${caption || ''}|event=${event || ''}|uploadedBy=${caller.name}`
+      };
 
   const signature = cloudinary.signParams(paramsToSign);
 
