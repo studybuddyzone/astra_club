@@ -1,15 +1,17 @@
 // api/cloudinary-sign.js  ->  POST /api/cloudinary-sign
-// Used by both the Photography workspace's upload panel AND the Joint
-// Secretary's "Post" (leadership photo) panel. The browser never sees
-// CLOUDINARY_API_SECRET — it only receives a one-time signature + timestamp
-// that Cloudinary itself will check when the upload arrives.
+// Used by the Photography workspace, Joint Secretary's "Post" panel, AND
+// the public Assistant Registration form (payment receipt upload). The
+// browser never sees CLOUDINARY_API_SECRET — it only receives a one-time
+// signature + timestamp that Cloudinary itself will check on upload.
 //
-//   Body: { purpose: 'gallery' | 'post', tags?, caption?, event?, name?, post? }
+//   Body: { purpose: 'gallery' | 'post' | 'receipt', ... }
 //
 // 'gallery' -> requires media.manage (Photography), uploads to astra-gallery.
 // 'post'    -> requires post.manage (Joint Secretary), uploads to
-//              astra-leadership, and stores the person's name + post/title
-//              in Cloudinary's context so /api/posts can display them.
+//              astra-leadership, stores name + post/title in context.
+// 'receipt' -> PUBLIC, no login required (the registrant has no account
+//              yet) — uploads to astra-registration-receipts only. This is
+//              deliberately the one purpose that skips the auth check.
 
 const { verifyToken } = require('../lib/authToken');
 const { hasPermission } = require('../lib/permissions');
@@ -31,37 +33,33 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const caller = verifyToken(getToken(req));
-  if (!caller) { res.status(403).json({ error: 'Please log in.' }); return; }
+  const purpose = ['post', 'receipt'].includes(req.body && req.body.purpose) ? req.body.purpose : 'gallery';
 
-  const purpose = (req.body && req.body.purpose) === 'post' ? 'post' : 'gallery';
-
-  if (purpose === 'post') {
-    if (!(hasPermission(caller.role, 'post.manage') || hasPermission(caller.role, '*'))) {
+  let caller = null;
+  if (purpose !== 'receipt') {
+    caller = verifyToken(getToken(req));
+    if (!caller) { res.status(403).json({ error: 'Please log in.' }); return; }
+    if (purpose === 'post' && !(hasPermission(caller.role, 'post.manage') || hasPermission(caller.role, '*'))) {
       res.status(403).json({ error: 'You are not authorized to add a leadership post.' });
       return;
     }
-  } else if (!(hasPermission(caller.role, 'media.manage') || hasPermission(caller.role, '*'))) {
-    res.status(403).json({ error: 'You are not authorized to upload to the gallery.' });
-    return;
+    if (purpose === 'gallery' && !(hasPermission(caller.role, 'media.manage') || hasPermission(caller.role, '*'))) {
+      res.status(403).json({ error: 'You are not authorized to upload to the gallery.' });
+      return;
+    }
   }
 
   const { tags, caption, event, name, post } = req.body || {};
   const timestamp = Math.round(Date.now() / 1000);
 
-  const paramsToSign = purpose === 'post'
-    ? {
-        timestamp,
-        folder: 'astra-leadership',
-        tags: 'leadership',
-        context: `name=${name || ''}|post=${post || ''}|addedBy=${caller.name}`
-      }
-    : {
-        timestamp,
-        folder: 'astra-gallery',
-        tags: tags || 'gallery',
-        context: `caption=${caption || ''}|event=${event || ''}|uploadedBy=${caller.name}`
-      };
+  let paramsToSign;
+  if (purpose === 'post') {
+    paramsToSign = { timestamp, folder: 'astra-leadership', tags: 'leadership', context: `name=${name || ''}|post=${post || ''}|addedBy=${caller.name}` };
+  } else if (purpose === 'receipt') {
+    paramsToSign = { timestamp, folder: 'astra-registration-receipts', tags: 'receipt' };
+  } else {
+    paramsToSign = { timestamp, folder: 'astra-gallery', tags: tags || 'gallery', context: `caption=${caption || ''}|event=${event || ''}|uploadedBy=${caller.name}` };
+  }
 
   const signature = cloudinary.signParams(paramsToSign);
 
@@ -72,6 +70,6 @@ module.exports = async (req, res) => {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     folder: paramsToSign.folder,
     tags: paramsToSign.tags,
-    context: paramsToSign.context
+    context: paramsToSign.context || null
   });
 };
