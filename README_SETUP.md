@@ -400,3 +400,47 @@ pixel-by-pixel audit of every existing tab/table on every screen size —
 if you spot a specific page/element that looks broken on your phone or
 laptop, tell me which one and I'll fix that spot directly rather than
 guessing at a full re-audit.
+
+## 16. Self-service Assistant Registration + approval queue — added
+
+Anyone can now apply to become an Assistant themselves — no more typing
+every applicant's details into "Create Assistant ID" by hand.
+
+### How it works
+1. **`register-assistant.html`** (public, linked from the Team & Roles tab
+   as "Register as Assistant"): name, email, mobile, password, which Head
+   they'll work under, and a ₹100 registration fee — Cash or Online. If
+   Online, they upload a payment screenshot (signed Cloudinary upload,
+   `purpose: 'receipt'` in `api/cloudinary-sign.js` — this is the one
+   upload purpose that's public/unauthenticated, since the applicant has
+   no account yet).
+2. **`POST /api/register-assistant`** creates the real Firebase Auth
+   account right away (so their chosen password is set), but writes
+   **nothing** to `/members/{uid}` yet. Since `/api/session`'s
+   verification 2 always checks `/members/{uid}` for a role, this means
+   the account genuinely cannot log into anything until approved — no
+   separate "disabled" flag needed, the absence of a member record does
+   the job. A pending `registrations/{uid}` record is written instead
+   (name, email, phone, reportsTo, payment method, receipt URL, status:
+   `pending`).
+3. **Joint Secretary's new "Registrations" tab**: a badge shows the
+   pending count on the sidebar, and a toast fires once per session on
+   login if anything's waiting. Pending/Approved/Rejected filters, each
+   entry shows the payment receipt thumbnail (click to view full size) or
+   a "cash — confirm before approving" note.
+4. **Approve** (`POST /api/registrations`, `action: 'approve'`) does the
+   final, authoritative 5-per-head capacity check (someone else may have
+   filled the last slot since this person applied) and, if there's room,
+   writes `/members/{uid}` with `role: 'assistant'` — this is the exact
+   same shape `api/create-member.js` already writes, so everything else
+   (Assistant Dashboard, Team tabs, permissions) works identically to a
+   manually-created assistant. **Reject** deletes the Firebase Auth
+   account again, freeing the email up for a future re-application.
+
+### What's intentionally not built here
+- No automated payment verification — a human (Joint Secretary) still
+  eyeballs the receipt screenshot or confirms cash was actually received
+  before hitting Approve. True payment-gateway integration would be a
+  separate, larger piece of work.
+- No email notifications to the applicant when approved/rejected — they
+  find out by trying to log in. Worth adding if you want it.

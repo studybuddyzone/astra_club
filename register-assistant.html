@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register as Assistant — Astra</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { darkMode: 'class', theme: { extend: { colors: { brand: { 50:'#eef2ff',100:'#e0e7ff',500:'#6366f1',600:'#4f46e5',700:'#4338ca' } } } } }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="roles-data.js"></script>
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .font-display { font-family: 'Outfit', sans-serif; }
+</style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col items-center py-8 px-4">
+
+<div class="w-full max-w-lg">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="index.html" class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center"><i class="fa-solid fa-user-plus"></i></a>
+    <div>
+      <h1 class="font-display font-bold text-xl text-slate-900 dark:text-white">Register as Assistant</h1>
+      <p class="text-xs text-slate-400">Astra Club Management Suite</p>
+    </div>
+  </div>
+
+  <!-- SUCCESS STATE -->
+  <div id="success-screen" class="hidden bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl p-8 text-center">
+    <div class="w-14 h-14 mx-auto rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl mb-4"><i class="fa-solid fa-circle-check"></i></div>
+    <h2 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Registration Submitted</h2>
+    <p id="success-message" class="text-sm text-slate-500 dark:text-slate-400 mb-6">A Joint Secretary will review your registration soon.</p>
+    <a href="index.html" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold inline-block">Back to Astra</a>
+  </div>
+
+  <!-- FORM -->
+  <form id="reg-form" onsubmit="submitRegistration(event)" class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl p-7 space-y-4">
+    <p class="text-sm text-slate-500 dark:text-slate-400">Apply to join as an Assistant under a Head. Your account activates once a Joint Secretary approves this application.</p>
+
+    <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Full Name</label><input id="r-name" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"></div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Email</label><input id="r-email" type="email" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"></div>
+      <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Mobile Number</label><input id="r-phone" type="tel" required placeholder="+91 XXXXX XXXXX" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"></div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Password</label><input id="r-password" type="password" minlength="8" required placeholder="At least 8 characters" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"></div>
+      <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Confirm Password</label><input id="r-password2" type="password" minlength="8" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"></div>
+    </div>
+
+    <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Which Head will you work under?</label>
+      <select id="r-reports-to" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white">
+        <option value="" disabled selected>— Select a Head —</option>
+      </select>
+    </div>
+
+    <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4">
+      <div class="flex items-center justify-between mb-3">
+        <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Registration Fee</label>
+        <span class="text-lg font-extrabold text-slate-900 dark:text-white">₹100</span>
+      </div>
+      <div class="flex gap-4 mb-3">
+        <label class="flex items-center gap-2 text-sm"><input type="radio" name="r-payment" value="cash" checked onchange="togglePaymentFields()"> Cash</label>
+        <label class="flex items-center gap-2 text-sm"><input type="radio" name="r-payment" value="online" onchange="togglePaymentFields()"> Online</label>
+      </div>
+      <div id="receipt-field" class="hidden">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Payment Receipt / Screenshot</label>
+        <input id="r-receipt" type="file" accept="image/*" class="w-full text-sm file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-indigo-100 dark:file:bg-indigo-950/60 file:text-indigo-700 dark:file:text-indigo-400 file:font-semibold text-slate-500">
+        <p class="text-[11px] text-slate-400 mt-1">If you paid cash instead, switch the option above — no screenshot needed.</p>
+      </div>
+    </div>
+
+    <p id="reg-error" class="hidden text-xs text-rose-600 bg-rose-50 dark:bg-rose-950/40 rounded-xl p-2.5"></p>
+    <p id="reg-progress" class="hidden text-xs text-slate-400"></p>
+
+    <button id="reg-submit-btn" type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold">Submit Registration</button>
+  </form>
+</div>
+
+<script>
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+
+// Populate the "Which Head" dropdown from the shared role list.
+(function populateHeads() {
+  const sel = document.getElementById('r-reports-to');
+  (window.ASTRA_ROLES || []).forEach(r => sel.insertAdjacentHTML('beforeend', `<option value="${r.id}">${r.name}</option>`));
+})();
+
+window.togglePaymentFields = function() {
+  const online = document.querySelector('input[name="r-payment"]:checked').value === 'online';
+  document.getElementById('receipt-field').classList.toggle('hidden', !online);
+  document.getElementById('r-receipt').required = online;
+};
+
+window.submitRegistration = async function(e) {
+  e.preventDefault();
+  const err = document.getElementById('reg-error');
+  const progress = document.getElementById('reg-progress');
+  const btn = document.getElementById('reg-submit-btn');
+  err.classList.add('hidden');
+
+  const password = document.getElementById('r-password').value;
+  const password2 = document.getElementById('r-password2').value;
+  if (password !== password2) { err.textContent = 'Passwords do not match.'; err.classList.remove('hidden'); return; }
+
+  const paymentMethod = document.querySelector('input[name="r-payment"]:checked').value;
+  const receiptFile = document.getElementById('r-receipt').files[0];
+  if (paymentMethod === 'online' && !receiptFile) { err.textContent = 'Please upload your payment receipt.'; err.classList.remove('hidden'); return; }
+
+  btn.disabled = true;
+  let paymentReceiptUrl = null;
+
+  try {
+    if (paymentMethod === 'online') {
+      progress.textContent = 'Uploading payment receipt...';
+      progress.classList.remove('hidden');
+      const signResp = await fetch('/api/cloudinary-sign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ purpose: 'receipt' }) });
+      const sign = await signResp.json();
+      if (!signResp.ok) throw new Error(sign.error || 'Could not prepare receipt upload.');
+
+      const form = new FormData();
+      form.append('file', receiptFile);
+      form.append('api_key', sign.apiKey);
+      form.append('timestamp', sign.timestamp);
+      form.append('signature', sign.signature);
+      form.append('folder', sign.folder);
+      form.append('tags', sign.tags);
+      const uploadResp = await fetch(`https://api.cloudinary.com/v1_1/${sign.cloudName}/image/upload`, { method: 'POST', body: form });
+      const uploadResult = await uploadResp.json();
+      if (!uploadResp.ok) throw new Error(uploadResult?.error?.message || 'Receipt upload failed.');
+      paymentReceiptUrl = uploadResult.secure_url;
+    }
+
+    progress.textContent = 'Submitting registration...';
+    progress.classList.remove('hidden');
+    const body = {
+      name: document.getElementById('r-name').value.trim(),
+      email: document.getElementById('r-email').value.trim(),
+      phone: document.getElementById('r-phone').value.trim(),
+      password,
+      reportsTo: document.getElementById('r-reports-to').value,
+      paymentMethod,
+      paymentReceiptUrl
+    };
+    const resp = await fetch('/api/register-assistant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const result = await resp.json();
+    if (!resp.ok) throw new Error(result.error || 'Could not submit registration.');
+
+    document.getElementById('reg-form').classList.add('hidden');
+    document.getElementById('success-message').textContent = result.message || 'A Joint Secretary will review your registration soon.';
+    document.getElementById('success-screen').classList.remove('hidden');
+  } catch (e2) {
+    err.textContent = e2.message;
+    err.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    progress.classList.add('hidden');
+  }
+};
+</script>
+</body>
+</html>
