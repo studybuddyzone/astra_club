@@ -9,6 +9,7 @@
 const { auth, rtdb } = require('../lib/firebaseAdmin');
 const { verifyToken } = require('../lib/authToken');
 const { hasPermission, normalizeRole, ROLE_PERMISSIONS } = require('../lib/permissions');
+const { getCapacity } = require('../lib/capacity');
 
 function getToken(req) {
   const header = req.headers.authorization || '';
@@ -95,6 +96,36 @@ module.exports = async (req, res) => {
     return;
   }
 
+  // Reassigning an existing assistant/member to a different Head, rather
+  // than creating someone new. Body: { action: 'reassign', uid, reportsTo }.
+  if (req.body && req.body.action === 'reassign') {
+    const { uid, reportsTo } = req.body;
+    if (!uid || !reportsTo) { res.status(400).json({ error: 'uid and reportsTo are required.' }); return; }
+    const normalizedTarget = normalizeRole(reportsTo);
+    if (!ROLE_PERMISSIONS[normalizedTarget]) { res.status(400).json({ error: `Unknown head "${reportsTo}".` }); return; }
+
+    try {
+      const memberSnap = await rtdb.ref(`members/${uid}`).once('value');
+      const member = memberSnap.val();
+      if (!member) { res.status(404).json({ error: 'Member not found.' }); return; }
+
+      const capacity = await getCapacity(rtdb, normalizedTarget);
+      const targetSnap = await rtdb.ref('members').orderByChild('reportsTo').equalTo(normalizedTarget).once('value');
+      const targetCount = Object.keys(targetSnap.val() || {}).length;
+      if (targetCount >= capacity) {
+        res.status(400).json({ error: `That head is already at capacity (${targetCount}/${capacity}). Raise their capacity first, or pick a different head.` });
+        return;
+      }
+
+      await rtdb.ref(`members/${uid}`).update({ reportsTo: normalizedTarget, updatedAt: Date.now(), updatedBy: caller.name });
+      res.status(200).json({ success: true });
+    } catch (err) {
+      console.error('Reassign member error:', err);
+      res.status(500).json({ error: 'Could not move this person to the new head.' });
+    }
+    return;
+  }
+
   const { name, email, password, role, department, phone, reportsTo } = req.body || {};
   if (!name || !email || !password || !role) {
     res.status(400).json({ error: 'name, email, password and role are all required.' });
@@ -116,12 +147,14 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Enforce: max 5 members under any one Head.
+    // Enforce the configurable per-head capacity (Joint Secretary can
+    // raise/lower this from their dashboard — see api/capacities.js).
     if (normalizedReportsTo) {
+      const capacity = await getCapacity(rtdb, normalizedReportsTo);
       const snap = await rtdb.ref('members').orderByChild('reportsTo').equalTo(normalizedReportsTo).once('value');
       const existing = snap.val() || {};
-      if (Object.keys(existing).length >= 5) {
-        res.status(400).json({ error: `This head already has 5 members under them. Remove one before adding another.` });
+      if (Object.keys(existing).length >= capacity) {
+        res.status(400).json({ error: `This head is already at capacity (${Object.keys(existing).length}/${capacity}). Raise their capacity first, or choose a different head.` });
         return;
       }
     }

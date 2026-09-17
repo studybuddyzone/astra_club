@@ -8,6 +8,7 @@
 const { auth, rtdb } = require('../lib/firebaseAdmin');
 const { verifyToken } = require('../lib/authToken');
 const { hasPermission, normalizeRole } = require('../lib/permissions');
+const { getCapacity } = require('../lib/capacity');
 
 function getToken(req) {
   const header = req.headers.authorization || '';
@@ -69,14 +70,16 @@ module.exports = async (req, res) => {
     // registered/been approved for this head since this one was submitted.
     const existingSnap = await rtdb.ref('members').orderByChild('reportsTo').equalTo(registration.reportsTo).once('value');
     const existingCount = Object.keys(existingSnap.val() || {}).length;
-    if (existingCount >= 5) {
-      res.status(400).json({ error: `${normalizeRole(registration.reportsTo)} already has 5 assistants. Reject this one or ask them to pick a different head.` });
+    const capacity = await getCapacity(rtdb, registration.reportsTo);
+    if (existingCount >= capacity) {
+      res.status(400).json({ error: `${normalizeRole(registration.reportsTo)} is already at capacity (${existingCount}/${capacity}). Raise their capacity, reject this one, or ask them to pick a different head.` });
       return;
     }
 
     await rtdb.ref(`members/${uid}`).set({
       name: registration.name,
       email: registration.email,
+      personalEmail: registration.personalEmail || null,
       phone: registration.phone,
       role: 'assistant',
       reportsTo: registration.reportsTo,
