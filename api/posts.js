@@ -17,6 +17,7 @@ module.exports = async (req, res) => {
   try {
     const images = await cloudinary.listImages({ folder: 'astra-leadership', maxResults: 100 });
     const posts = images.map(img => ({
+      publicId: img.publicId,
       url: img.url,
       name: img.context.name || '',
       post: img.context.post || '',

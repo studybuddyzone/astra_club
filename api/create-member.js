@@ -48,6 +48,37 @@ module.exports = async (req, res) => {
     return;
   }
 
+  if (req.method === 'DELETE') {
+    // Deletes the ID completely: the Firebase Auth account, the
+    // /members/{uid} Realtime Database record, and (best-effort) any
+    // /registrations/{uid} record if they came through self-registration.
+    // Note: member/assistant accounts never had a Firestore document to
+    // begin with (only Auth + Realtime Database hold their data), so
+    // there's nothing to clean up there — this removes every place their
+    // account actually lives.
+    if (!rtdb) { res.status(500).json({ error: 'Realtime Database is not configured.' }); return; }
+    const caller = verifyToken(getToken(req));
+    if (!caller || !hasPermission(caller.role, 'members.create')) {
+      res.status(403).json({ error: 'You are not authorized to delete member IDs.' });
+      return;
+    }
+    const { uid } = req.body || {};
+    if (!uid) { res.status(400).json({ error: 'uid is required.' }); return; }
+
+    try {
+      await auth.deleteUser(uid).catch(err => {
+        if (err && err.code !== 'auth/user-not-found') throw err; // already gone from Auth is fine
+      });
+      await rtdb.ref(`members/${uid}`).remove();
+      await rtdb.ref(`registrations/${uid}`).remove().catch(() => {}); // best-effort, may not exist
+      res.status(200).json({ success: true });
+    } catch (err) {
+      console.error('Delete member error:', err);
+      res.status(500).json({ error: err.message || 'Could not delete this ID.' });
+    }
+    return;
+  }
+
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
