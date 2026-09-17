@@ -293,7 +293,7 @@
 
                 <!-- Leadership/Team auto-scrolling strip (fed by Joint Secretary's "Post" panel) -->
                 <div id="leadership-strip-wrap" class="hidden bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden py-5">
-                    <div class="marquee-track flex gap-6 px-6" id="leadership-strip"></div>
+                    <div class="flex gap-6 px-6" id="leadership-strip"></div>
                 </div>
 
                 <!-- Budget Overview (visible to everyone) -->
@@ -648,8 +648,18 @@
                         <p class="text-xs font-bold text-slate-800 dark:text-slate-200 mt-2 truncate">${escGallery(p.name)}</p>
                         <p class="text-[10px] text-slate-400 truncate">${escGallery(p.post)}</p>
                     </div>`).join('');
-                // Duplicate the list once so the CSS translateX(-50%) loop is seamless.
-                track.innerHTML = cardHtml + cardHtml;
+                if (posts.length >= 5) {
+                    // Enough photos that duplicating the list once makes the
+                    // CSS translateX(-50%) loop look seamless instead of repetitive.
+                    track.innerHTML = cardHtml + cardHtml;
+                    track.classList.add('marquee-track');
+                    track.classList.remove('justify-center');
+                } else {
+                    // Too few to loop convincingly — just show them once, centered, no scroll.
+                    track.innerHTML = cardHtml;
+                    track.classList.remove('marquee-track');
+                    track.classList.add('justify-center');
+                }
                 wrap.classList.remove('hidden');
             } catch (e) { wrap.classList.add('hidden'); }
         }

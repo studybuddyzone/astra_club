@@ -173,12 +173,24 @@ async function loadGallery() {
       return;
     }
     grid.innerHTML = images.map(img => `
-      <a href="${img.url}" target="_blank" rel="noopener" class="group relative block aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
-        <img src="${img.url}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+      <div class="group relative block aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
+        <a href="${img.url}" target="_blank" rel="noopener"><img src="${img.url}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"></a>
+        <button onclick="deleteGalleryPhoto('${img.publicId}')" class="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-slate-900/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash text-xs"></i></button>
         ${img.context.caption ? `<span class="absolute bottom-0 inset-x-0 bg-slate-950/60 text-white text-[10px] px-2 py-1 truncate">${esc(img.context.caption)}</span>` : ''}
-      </a>`).join('');
+      </div>`).join('');
   } catch (e) { grid.innerHTML = `<div class="col-span-full text-center py-10 text-sm text-rose-500">Could not load the gallery.</div>`; }
 }
+
+window.deleteGalleryPhoto = async function(publicId) {
+  if (!confirm('Delete this photo? It will disappear from the public gallery immediately.')) return;
+  try {
+    const resp = await fetch('/api/media-delete', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }, body: JSON.stringify({ publicId, purpose: 'gallery' }) });
+    const result = await resp.json();
+    if (!resp.ok) throw new Error(result.error || 'Could not delete.');
+    showToast('Photo deleted.');
+    loadGallery();
+  } catch (err) { showToast(err.message, 'error'); }
+};
 
 window.handleUpload = async function(e) {
   e.preventDefault();

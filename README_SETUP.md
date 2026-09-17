@@ -444,3 +444,37 @@ every applicant's details into "Create Assistant ID" by hand.
   separate, larger piece of work.
 - No email notifications to the applicant when approved/rejected — they
   find out by trying to log in. Worth adding if you want it.
+
+## 17. Delete ID + delete photos — added
+
+### Deleting a member/assistant ID
+Joint Secretary's Members table now has a trash icon per row
+(`DELETE /api/create-member`, `members.create` permission). Deleting
+removes:
+- The **Firebase Auth** account (`auth.deleteUser`)
+- The **`/members/{uid}`** Realtime Database record
+- The matching **`/registrations/{uid}`** record, if they came through
+  self-registration (best-effort — fine if it doesn't exist)
+
+Member/assistant accounts never had a Firestore document to begin with —
+only Auth + Realtime Database hold their data — so this removes every
+place the account actually lives. Their email becomes free to
+re-register or be re-created with immediately.
+
+### Deleting photos
+- **Photography workspace**: hover any gallery photo → trash icon appears
+  → deletes it from Cloudinary (and therefore the public Gallery tab)
+  immediately.
+- **Joint Secretary's Post panel**: same pattern — hover a leadership
+  photo → trash icon → deletes it from Cloudinary (and therefore the
+  homepage auto-scroll strip) immediately.
+- Both call the new `POST /api/media-delete` (`{ publicId, purpose }`),
+  which uses Cloudinary's Admin API with the server-only API secret — the
+  browser never touches the delete credentials.
+
+### Homepage strip duplicate-photo fix
+The auto-scroll strip used to always render every photo **twice** (to
+make the infinite-loop animation seamless) — with only 1–2 posts uploaded
+this looked like a duplicate-upload bug. It now only doubles the list
+once there are 5+ posts (where the loop actually needs it); with fewer,
+each photo shows exactly once, centered, with no scroll animation.
