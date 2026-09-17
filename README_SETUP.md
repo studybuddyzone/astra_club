@@ -478,3 +478,61 @@ make the infinite-loop animation seamless) — with only 1–2 posts uploaded
 this looked like a duplicate-upload bug. It now only doubles the list
 once there are 5+ posts (where the loop actually needs it); with fewer,
 each photo shows exactly once, centered, with no scroll animation.
+
+## 18. @astra.club login emails for self-registered Assistants — added
+
+Whatever email an applicant types on `register-assistant.html` (Gmail,
+Yahoo, anything), only the part before `@` is kept — their real Firebase
+Auth login becomes `<that part>@astra.club`, always, regardless of what
+domain they originally typed. `abc@gmail.com` → login is `abc@astra.club`.
+
+- The registration form shows a **live preview** of the generated login
+  email as they type, and the success screen displays it prominently
+  (this is the only email they can actually log in with afterward).
+- Their originally-typed email is kept as `personalEmail` — stored
+  alongside the record purely as a contact address for the Joint
+  Secretary, never used for login.
+- The Joint Secretary's Registrations tab shows both: **Login** (the
+  `@astra.club` one) and **Contact** (their real email), side by side.
+- On approval, `personalEmail` carries over into the final
+  `/members/{uid}` record too.
+
+> ⚠️ **Worth knowing:** `astra.club` is used here purely as a login
+> identifier, not a real mailbox — this system never sends Firebase's
+> built-in verification/reset emails (login goes through our own
+> `/api/session`, not Firebase's email flows), so a working inbox at that
+> domain was never required. If you *do* want these to be real,
+> receivable addresses one day, you'd need to actually own and set up
+> mail hosting for `astra.club`.
+>
+ **Known edge case:** two different people whose emails share the same
+> part before `@` (e.g. `abc@gmail.com` and `abc@yahoo.com`) will collide
+> on the same `abc@astra.club` login — the second person's registration
+> will fail with a clear "that login is already taken" message, and
+> they'll need to try a different email so the generated local-part is
+> unique.
+
+## 19. Configurable per-head assistant capacity + reassignment — added
+
+The 5-per-head cap was hardcoded everywhere. It's now a real, adjustable
+number, stored at `/capacities/{roleId}` in the Realtime Database (empty =
+falls back to 5, the old default).
+
+- **New "Capacity" tab** in Joint Secretary's workspace: every role listed
+  with its current count, a `−`/`+` stepper, and the live cap. Changing it
+  calls `POST /api/capacities` (`capacity.manage` permission — Joint
+  Secretary + wildcard) and takes effect immediately everywhere: "Create
+  ID," "Create Assistant ID," the public registration form, and approvals
+  all read the same number via `lib/capacity.js`'s `getCapacity()`.
+- If a head is lowered below their current headcount, that row turns red
+  in the Capacity tab ("over capacity, move some to another head") — it
+  doesn't auto-remove anyone.
+- **New "Move" action** (⇄ icon) on every assistant/member row in the
+  Members table: pick a different head from a dropdown (already showing
+  live `count/capacity`, full heads disabled) and they're reassigned
+  instantly — `POST /api/create-member` with `{ action: 'reassign', uid,
+  reportsTo }`, still capacity-checked server-side on the target head.
+
+This is exactly the "raise Event Head's assistants from 5 to 10, or move
+the extra ones somewhere else" workflow — all from the same dashboard, no
+manual Firebase Console editing needed.

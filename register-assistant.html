@@ -31,7 +31,8 @@
   <div id="success-screen" class="hidden bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl p-8 text-center">
     <div class="w-14 h-14 mx-auto rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl mb-4"><i class="fa-solid fa-circle-check"></i></div>
     <h2 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Registration Submitted</h2>
-    <p id="success-message" class="text-sm text-slate-500 dark:text-slate-400 mb-6">A Joint Secretary will review your registration soon.</p>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">A Joint Secretary will review your application. Once approved, log in with:</p>
+    <p id="success-login-email" class="text-base font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl py-2.5 mb-6">—</p>
     <a href="index.html" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold inline-block">Back to Astra</a>
   </div>
 
@@ -42,7 +43,7 @@
     <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Full Name</label><input id="r-name" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"></div>
 
     <div class="grid grid-cols-2 gap-4">
-      <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Email</label><input id="r-email" type="email" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"></div>
+      <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Email</label><input id="r-email" type="email" required placeholder="any email works" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"><p class="text-[11px] text-slate-400 mt-1">Your actual login becomes <span id="preview-club-email" class="font-semibold text-indigo-600 dark:text-indigo-400">—@astra.club</span> (the part before "@" here, on the club's domain) — not the email above.</p></div>
       <div><label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Mobile Number</label><input id="r-phone" type="tel" required placeholder="+91 XXXXX XXXXX" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"></div>
     </div>
 
@@ -88,6 +89,12 @@ function esc(s) { return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;',
   const sel = document.getElementById('r-reports-to');
   (window.ASTRA_ROLES || []).forEach(r => sel.insertAdjacentHTML('beforeend', `<option value="${r.id}">${r.name}</option>`));
 })();
+
+// Live preview of the generated <localpart>@astra.club login email.
+document.getElementById('r-email').addEventListener('input', function() {
+  const local = this.value.split('@')[0].toLowerCase().replace(/[^a-z0-9._-]/g, '');
+  document.getElementById('preview-club-email').textContent = (local || '—') + '@astra.club';
+});
 
 window.togglePaymentFields = function() {
   const online = document.querySelector('input[name="r-payment"]:checked').value === 'online';
@@ -150,7 +157,7 @@ window.submitRegistration = async function(e) {
     if (!resp.ok) throw new Error(result.error || 'Could not submit registration.');
 
     document.getElementById('reg-form').classList.add('hidden');
-    document.getElementById('success-message').textContent = result.message || 'A Joint Secretary will review your registration soon.';
+    document.getElementById('success-login-email').textContent = result.loginEmail || '—';
     document.getElementById('success-screen').classList.remove('hidden');
   } catch (e2) {
     err.textContent = e2.message;
