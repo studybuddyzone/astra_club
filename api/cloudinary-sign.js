@@ -1,14 +1,19 @@
 // api/cloudinary-sign.js  ->  POST /api/cloudinary-sign
-// Used by the Photography workspace, Joint Secretary's "Post" panel, AND
-// the public Assistant Registration form (payment receipt upload). The
-// browser never sees CLOUDINARY_API_SECRET — it only receives a one-time
-// signature + timestamp that Cloudinary itself will check on upload.
+// Used by the Photography workspace, Joint Secretary's "Post" panel, the
+// Joint Secretary's "ID Cards" photo manager, AND the public Assistant
+// Registration form (payment receipt upload). The browser never sees
+// CLOUDINARY_API_SECRET — it only receives a one-time signature + timestamp
+// that Cloudinary itself will check on upload.
 //
-//   Body: { purpose: 'gallery' | 'post' | 'receipt', ... }
+//   Body: { purpose: 'gallery' | 'post' | 'receipt' | 'idcard', ... }
 //
 // 'gallery' -> requires media.manage (Photography), uploads to astra-gallery.
 // 'post'    -> requires post.manage (Joint Secretary), uploads to
 //              astra-leadership, stores name + post/title in context.
+// 'idcard'  -> requires members.create (Joint Secretary), uploads to
+//              astra-idcards with a fixed public_id = the card's slug, so
+//              re-uploading a photo overwrites the old one instead of
+//              piling up unused images.
 // 'receipt' -> PUBLIC, no login required (the registrant has no account
 //              yet) — uploads to astra-registration-receipts only. This is
 //              deliberately the one purpose that skips the auth check.
@@ -33,7 +38,7 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const purpose = ['post', 'receipt'].includes(req.body && req.body.purpose) ? req.body.purpose : 'gallery';
+  const purpose = ['post', 'receipt', 'idcard'].includes(req.body && req.body.purpose) ? req.body.purpose : 'gallery';
 
   let caller = null;
   if (purpose !== 'receipt') {
@@ -47,14 +52,21 @@ module.exports = async (req, res) => {
       res.status(403).json({ error: 'You are not authorized to upload to the gallery.' });
       return;
     }
+    if (purpose === 'idcard' && !(hasPermission(caller.role, 'members.create') || hasPermission(caller.role, '*'))) {
+      res.status(403).json({ error: 'You are not authorized to manage ID card photos.' });
+      return;
+    }
   }
 
-  const { tags, caption, event, name, post } = req.body || {};
+  const { tags, caption, event, name, post, slug } = req.body || {};
   const timestamp = Math.round(Date.now() / 1000);
 
   let paramsToSign;
   if (purpose === 'post') {
     paramsToSign = { timestamp, folder: 'astra-leadership', tags: 'leadership', context: `name=${name || ''}|post=${post || ''}|addedBy=${caller.name}` };
+  } else if (purpose === 'idcard') {
+    if (!slug) { res.status(400).json({ error: 'slug is required for idcard uploads.' }); return; }
+    paramsToSign = { timestamp, folder: 'astra-idcards', public_id: slug, overwrite: 'true', tags: 'idcard' };
   } else if (purpose === 'receipt') {
     paramsToSign = { timestamp, folder: 'astra-registration-receipts', tags: 'receipt' };
   } else {
@@ -69,6 +81,8 @@ module.exports = async (req, res) => {
     apiKey: process.env.CLOUDINARY_API_KEY,
     cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     folder: paramsToSign.folder,
+    publicId: paramsToSign.public_id || null,
+    overwrite: paramsToSign.overwrite || null,
     tags: paramsToSign.tags,
     context: paramsToSign.context || null
   });
