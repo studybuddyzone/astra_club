@@ -508,7 +508,7 @@ body{
     <div class="profile">
 
         <div class="photo-wrap">
-            <img class="photo" src="https://i.pravatar.cc/400?img=22" alt="Megha Gaikwad">
+            <img class="photo" src="../assets/member-22-megha-gaikwad.jpg" onerror="this.onerror=null;this.style.opacity='0';" alt="Megha Gaikwad">
             <div class="status-dot"></div>
         </div>
 
@@ -644,7 +644,7 @@ body{
     <!-- QR -->
 
     <div class="qr-container">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=https%3A%2F%2Fastra.club%2Fid%2Fmegha-gaikwad" alt="QR Code">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=https%3A%2F%2Fastra-club-psi.vercel.app%2Fid-cards%2Fmember-22-megha-gaikwad.html" alt="QR Code">
     </div>
 
 
@@ -784,7 +784,7 @@ function doCall(){
 /* QR PROFILE */
 
 function openProfile(){
-    window.open("https://astra.club/id/megha-gaikwad", "_blank");
+    window.open("https://astra-club-psi.vercel.app/id-cards/member-22-megha-gaikwad.html", "_blank");
 }
 
 </script>
@@ -802,7 +802,7 @@ function openProfile(){
       var entry = data && data[slug];
       if (entry && entry.url) {
         var img = document.querySelector('.photo');
-        if (img) img.src = entry.url;
+        if (img) { img.style.opacity = '1'; img.src = entry.url; }
       }
     })
     .catch(function () { /* keep placeholder photo if this fails */ });
