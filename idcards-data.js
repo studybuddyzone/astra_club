@@ -125,7 +125,7 @@ window.ASTRA_IDCARDS = [
   },
   {
     "slug": "member-24-sohila-shaikh",
-    "name": "Sohila Shaikh",
+    "name": "Shaikh Sohela",
     "file": "id-cards/member-24-sohila-shaikh.html"
   },
   {
@@ -137,5 +137,10 @@ window.ASTRA_IDCARDS = [
     "slug": "member-26-govind-ade",
     "name": "Govind Ade",
     "file": "id-cards/member-26-govind-ade.html"
+  },
+  {
+    "slug": "member-27-dhage-sujata-sudhakar",
+    "name": "Dhage Sujata Sudhakar",
+    "file": "id-cards/member-27-dhage-sujata-sudhakar.html"
   }
 ];
