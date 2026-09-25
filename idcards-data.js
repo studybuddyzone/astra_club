@@ -142,5 +142,10 @@ window.ASTRA_IDCARDS = [
     "slug": "member-27-dhage-sujata-sudhakar",
     "name": "Dhage Sujata Sudhakar",
     "file": "id-cards/member-27-dhage-sujata-sudhakar.html"
+  },
+  {
+    "slug": "member-28-prajakta-jawade",
+    "name": "Prajakta Jawade",
+    "file": "id-cards/member-28-prajakta-jawade.html"
   }
 ];
