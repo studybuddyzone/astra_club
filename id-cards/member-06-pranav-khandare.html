@@ -79,6 +79,15 @@ body{min-height:100vh;display:flex;align-items:center;justify-content:center;pad
   .card{transition:transform .25s ease}
   .photo-lightbox-inner{transition:none}
 }
+
+/* ================= DEMO: "View Portfolio" button on the front of the card ================= */
+.card-wrapper{height:min(702px,158vw,92vh)}
+@media(max-width:400px){.card-wrapper{height:min(634px,162vw,92vh)}}
+.bottom-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.view-portfolio{border:1px solid var(--gold);border-radius:18px;padding:8px 15px;background:linear-gradient(180deg,#ead08f,#cda55b);color:#35101d;font:900 8px/1 Manrope,Arial;letter-spacing:1.4px;cursor:pointer;box-shadow:0 7px 16px #00000040;transition:transform .18s}
+.view-portfolio:hover{transform:translateY(-1px)}
+.view-portfolio:active{transform:scale(.97)}
+.bottom-right .flip-hint{color:#ead29b}
 </style>
 </head>
 
@@ -231,7 +240,10 @@ body{min-height:100vh;display:flex;align-items:center;justify-content:center;pad
     <div class="bottom">
         <div class="signature">“Better Together”</div>
         <div class="member-id">ASTRA • DIGITAL MEMBER</div>
-        <div class="flip-hint">SWIPE / TAP TO FLIP →</div>
+        <div class="bottom-right">
+            <button type="button" class="view-portfolio" onclick="openPortfolio()">VIEW PORTFOLIO ↗</button>
+            <div class="flip-hint">SWIPE / TAP TO FLIP →</div>
+        </div>
     </div>
 
 
@@ -453,6 +465,12 @@ function doWhatsapp(){
 function doCall(){
     window.location.href = "tel:+91 8446569329";
     closeSheet();
+}
+
+/* PORTFOLIO (demo) */
+
+function openPortfolio(){
+    window.open("../portfolio/member-06-pranav-khandare/", "_blank");
 }
 
 /* QR PROFILE */
